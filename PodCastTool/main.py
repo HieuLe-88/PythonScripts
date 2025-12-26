@@ -77,31 +77,34 @@ def draw_multiline(draw, text, font, x, y, max_width, fill=(255,255,255)):
 def animated_text(*args, duration=None, side="left", speaker="M"):
     W, H = VIDEO_SIZE
     max_width = W - 160
-    sub_height = 160
+    sub_height = 155  # chiều cao khung sub 
     rect_y = H - sub_height - 60
     
-    base_x = 80
-    x = base_x - 20 if speaker == "M" else base_x + 20
+    # Căn giữa: x là điểm bắt đầu, để draw_multiline căn giữa ta tính x là trung tâm
+    center_x = W // 2
 
     if selected_language == "Chinese":
         hanzi, pinyin, english_text = args
-        font_hanzi = ImageFont.truetype(FONT_HANZI_PATH, 42)
-        font_pinyin = ImageFont.truetype(FONT_PINYIN_PATH, 28)
-        font_en = ImageFont.truetype(FONT_LATIN_PATH, 28)
+        # Tăng size font thêm 20%
+        font_hanzi = ImageFont.truetype(FONT_HANZI_PATH, int(42 * 1.2))
+        font_pinyin = ImageFont.truetype(FONT_PINYIN_PATH, int(28 * 1.2))
+        font_en = ImageFont.truetype(FONT_LATIN_PATH, int(28 * 1.2))
 
         def make_frame(t):
-            # Dùng RGBA và (0,0,0,0) để nền trong suốt, thấy được background phía sau
             img = Image.new("RGBA", (W, H), (0,0,0,0))
             draw = ImageDraw.Draw(img)
             draw.rectangle([ (0, rect_y), (W, rect_y + sub_height) ], fill=(255,255,255,255))
-            draw_multiline(draw, hanzi, font_hanzi, x, rect_y + 10, max_width, fill=(0,0,0,255))
-            draw_multiline(draw, pinyin, font_pinyin, x, rect_y + 60, max_width, fill=(0,0,0,255))
-            draw_multiline(draw, english_text, font_en, x, rect_y + 100, max_width, fill=(0,0,0,255))
-            return np.array(img.convert("RGB")) # Chuyển về RGB để MoviePy xử lý mảng
+            
+            # Sử dụng hàm vẽ căn giữa
+            draw_center_text(draw, hanzi, font_hanzi, center_x, rect_y + 15, max_width, fill=(0,0,0,255))
+            draw_center_text(draw, pinyin, font_pinyin, center_x, rect_y + 75, max_width, fill=(0,0,0,255))
+            draw_center_text(draw, english_text, font_en, center_x, rect_y + 120, max_width, fill=(0,0,0,255))
+            return np.array(img.convert("RGB"))
 
     else:
         original_text, english_text = args
-        font_size = 28
+        # Tăng size font thêm 20%
+        font_size = int(28 * 1.2)
         font = ImageFont.truetype(FONT_LATIN_PATH, font_size)
         font_en = ImageFont.truetype(FONT_LATIN_PATH, font_size)
 
@@ -109,12 +112,38 @@ def animated_text(*args, duration=None, side="left", speaker="M"):
             img = Image.new("RGBA", (W, H), (0,0,0,0))
             draw = ImageDraw.Draw(img)
             draw.rectangle([ (0, rect_y), (W, rect_y + sub_height) ], fill=(255,255,255,255))
-            draw_multiline(draw, original_text, font, x, rect_y + 30, max_width, fill=(0,0,0,255))
-            draw_multiline(draw, english_text, font_en, x, rect_y + 70, max_width, fill=(0,0,0,255))
+            
+            draw_center_text(draw, original_text, font, center_x, rect_y + 40, max_width, fill=(0,0,0,255))
+            draw_center_text(draw, english_text, font_en, center_x, rect_y + 95, max_width, fill=(0,0,0,255))
             return np.array(img.convert("RGB"))
 
-    # QUAN TRỌNG: Thêm size=(W, H)
     return VideoClip(make_frame, duration=duration).set_position("center")
+
+def draw_center_text(draw, text, font, center_x, y, max_width, fill=(255,255,255)):
+    if not text:
+        return
+    
+    # Chia dòng
+    lines = []
+    words = text.split(' ') if ' ' in text else list(text) # Tách từ cho Latin hoặc tách ký tự cho Chinese
+    
+    current_line = ""
+    for unit in words:
+        test_line = current_line + (" " if current_line and ' ' in text else "") + unit
+        if draw.textlength(test_line, font=font) <= max_width:
+            current_line = test_line
+        else:
+            lines.append(current_line)
+            current_line = unit
+    lines.append(current_line)
+
+    # Vẽ từng dòng căn giữa
+    for i, line in enumerate(lines):
+        # Tính toán anchor 'mm' (middle-middle) để căn giữa hoàn hảo
+        bbox = draw.textbbox((0, 0), line, font=font)
+        line_width = bbox[2] - bbox[0]
+        line_x = center_x - (line_width / 2)
+        draw.text((line_x, y + i * (font.size + 8)), line, font=font, fill=fill)
 
 # ---------- GENERATE TTS ----------
 async def tts_generate(text, voice, out_file):
