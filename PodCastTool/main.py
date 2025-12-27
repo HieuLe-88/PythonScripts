@@ -43,7 +43,12 @@ def parse_input(text, lang):
     return dialogs
 
 async def generate_assets(dialogs, lang, rate_str):
-    speed_map = {"100%": "+0Hz", "90%": "-10%", "80%": "-20%"}
+    speed_map = {
+        "100%": "+0Hz",
+        "90%": "-10%",
+        "80%": "-20%",
+        "70%": "-30%"
+    }
     rate = speed_map.get(rate_str, "+0Hz")
     
     audio_files = []
@@ -219,7 +224,7 @@ tk.OptionMenu(root, lang_var, "Vietnamese", "Spanish", "Chinese").pack()
 
 tk.Label(root, text="Tốc độ nói:").pack()
 speed_var = tk.StringVar(value="100%")
-tk.OptionMenu(root, speed_var, "100%", "90%", "80%").pack()
+tk.OptionMenu(root, speed_var, "100%", "90%", "80%", "70%").pack()
 
 tk.Button(root, text="Chọn Hình Nền / Video Nền", command=choose_background).pack(pady=5)
 bg_label = tk.Label(root, text="Chưa chọn nền")

@@ -1,8 +1,20 @@
 1
-00:00:00,000 --> 00:00:05,040
-{\fs15}Xin chào các bạn. Chào mừng đến với Podcast\N{\fs13}
+00:00:00,000 --> 00:00:04,248
+{\fs17}还要考虑酒店和民宿的预订。\N{\fs15}Hái yào kǎolǜ jiǔdiàn hé mínsù de yùdìng.\N{\fs13}Also, consider booking hotels and homestays.
 
 2
-00:00:05,040 --> 00:00:09,288
-{\fs17}Chào anh Nam. Rất vui được gặp anh\N{\fs15}
+00:00:04,248 --> 00:00:09,480
+{\fs17}最好选靠近海边且交通方便的地方。\N{\fs15}Zuì hǎo xuǎn kàojìn hǎibiān qiě jiāotōng fāngbiàn de dìfang.\N{\fs13}It's best to choose somewhere near the beach and convenient to move around.
+
+3
+00:00:09,480 --> 00:00:13,536
+{\fs17}我也想体验当地的文化活动。\N{\fs15}Wǒ yě xiǎng tǐyàn dāngdì de wénhuà huódòng.\N{\fs13}I also want to experience local cultural activities.
+
+4
+00:00:13,536 --> 00:00:18,024
+{\fs17}那我们就准备详细的行程安排吧。\N{\fs15}Nà wǒmen jiù zhǔnbèi xiángxì de xíngchéng ānpái ba.\N{\fs13}Then let's prepare a detailed itinerary.
+
+5
+00:00:18,024 --> 00:00:22,056
+{\fs17}听起来真棒，我非常期待。\N{\fs15}Tīng qǐlái zhēn bàng, wǒ fēicháng qídài.\N{\fs13}Sounds wonderful, I'm really excited.
 
