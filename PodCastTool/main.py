@@ -16,7 +16,8 @@ from moviepy.editor import (
 import edge_tts
 
 # ---------- CONFIG ----------
-VIDEO_SIZE = (1280, 720)
+# Nâng cấp lên chuẩn Full HD 1080p
+VIDEO_SIZE = (1920, 1080) 
 OUTPUT_DIR = "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -69,74 +70,72 @@ def draw_center_text(draw, text, font, center_x, y, max_width, fill=(0,0,0,255))
         draw.text((center_x - line_w/2, y + i * (font.size + 8)), line, font=font, fill=fill)
 
 # ---------- CLIP GENERATORS ----------
+# ---------- ANIMATED TEXT (Đã điều chỉnh tọa độ cho 1080p) ----------
 def animated_text(*args, duration=None):
     W, H = VIDEO_SIZE
-    rect_y = H - 215
+    # Điều chỉnh độ cao khung Sub cho khung hình 1080
+    rect_height = 200
+    rect_y = H - 300 
     center_x = W // 2
 
     def make_frame(t):
-        # 1. Tạo ảnh RGBA hoàn toàn trong suốt
         img = Image.new("RGBA", (W, H), (0,0,0,0))
         draw = ImageDraw.Draw(img)
         
-        # 2. Vẽ khung nền phụ đề (Opaque trắng)
-        draw.rectangle([(0, rect_y), (W, rect_y + 155)], fill=(255, 255, 255, 255))
+        # Vẽ khung nền phụ đề rộng hơn cho 1080p
+        draw.rectangle([(0, rect_y), (W, rect_y + rect_height)], fill=(255, 255, 255, 255))
         
         if selected_language == "Chinese":
-            f_h = ImageFont.truetype(FONT_HANZI_PATH, 50)
-            f_p = ImageFont.truetype(FONT_PINYIN_PATH, 30)
-            f_e = ImageFont.truetype(FONT_LATIN_PATH, 30)
-            draw_center_text(draw, args[0], f_h, center_x, rect_y + 15, W-160)
-            draw_center_text(draw, args[1], f_p, center_x, rect_y + 75, W-160)
-            draw_center_text(draw, args[2], f_e, center_x, rect_y + 115, W-160)
+            # Tăng size font cho vừa khung hình lớn
+            f_h = ImageFont.truetype(FONT_HANZI_PATH, 75)
+            f_p = ImageFont.truetype(FONT_PINYIN_PATH, 45)
+            f_e = ImageFont.truetype(FONT_LATIN_PATH, 45)
+            draw_center_text(draw, args[0], f_h, center_x, rect_y + 20, W-200)
+            draw_center_text(draw, args[1], f_p, center_x, rect_y + 105, W-200)
+            draw_center_text(draw, args[2], f_e, center_x, rect_y + 155, W-200)
         else:
-            font = ImageFont.truetype(FONT_LATIN_PATH, 35)
-            draw_center_text(draw, args[0], font, center_x, rect_y + 40, W-160)
-            draw_center_text(draw, args[1], font, center_x, rect_y + 95, W-160)
+            font = ImageFont.truetype(FONT_LATIN_PATH, 55)
+            draw_center_text(draw, args[0], font, center_x, rect_y + 40, W-200)
+            draw_center_text(draw, args[1], font, center_x, rect_y + 115, W-200)
         
-        # CHỐT: MoviePy cần RGB cho frame và Alpha riêng cho mask
         return np.array(img.convert("RGB"))
 
     def make_mask(t):
-        # Tạo mask từ kênh Alpha (0-255 -> 0.0-1.0)
         img = Image.new("RGBA", (W, H), (0,0,0,0))
         draw = ImageDraw.Draw(img)
-        draw.rectangle([(0, rect_y), (W, rect_y + 155)], fill=(255, 255, 255, 255))
-        # Mask phải là grayscale (L) 
+        draw.rectangle([(0, rect_y), (W, rect_y + rect_height)], fill=(255, 255, 255, 255))
         return np.array(img.convert("L")) / 255.0
 
     return VideoClip(make_frame, duration=duration).set_mask(VideoClip(make_mask, ismask=True, duration=duration))
 
+# ---------- WAVEFORM CLIP ----------
 def make_waveform_clip(audio_path, duration):
     audio = AudioFileClip(audio_path)
-    W_w, H_w = 400, 100
+    # Tăng kích thước waveform cho cân đối với 1080p
+    W_w, H_w = 600, 150 
     
-    def make_frame(t):
-        # Tạo nền đen hoàn toàn
+    def get_raw_frame(t):
         img = Image.new("RGB", (W_w, H_w), (0, 0, 0))
         draw = ImageDraw.Draw(img)
         try:
-            # Lấy biên độ âm thanh
             sample = audio.get_frame(t)
             amplitude = np.mean(np.abs(sample))
         except: 
             amplitude = 0
             
-        for i in range(25):
-            # Tính toán chiều cao thanh dựa trên amplitude
-            h = min(H_w, amplitude * 250 + np.random.randint(5, 15))
-            x = (W_w - 25 * 8) // 2 + i * 8  # Center the bars
-            # Vẽ thanh màu trắng (255, 255, 255)
-            draw.rectangle([x, (H_w-h)/2, x+5, (H_w+h)/2], fill=(255, 255, 255))
-        return np.array(img)
+        for i in range(30): # Tăng số lượng thanh cho đẹp
+            h = min(H_w, amplitude * 350 + np.random.randint(10, 20))
+            x = (W_w - 30 * 12) // 2 + i * 12
+            draw.rectangle([x, (H_w-h)/2, x + 8, (H_w+h)/2], fill=(255, 255, 255))
+        return img
+
+    def make_frame(t):
+        return np.array(get_raw_frame(t))
 
     def make_mask(t):
-        # Lấy chính frame đó để làm mask
-        frame = make_frame(t)
-        # Chuyển về grayscale (L): Màu trắng (thanh waveform) sẽ thành 255, đen (nền) thành 0
-        mask_img = Image.fromarray(frame).convert("L")
-        # Chuẩn hóa về dải 0.0 - 1.0 (0.0 là trong suốt, 1.0 là hiện rõ)
-        return np.array(mask_img) / 255.0
+        img = get_raw_frame(t).convert("L")
+        mask_array = np.array(img.point(lambda p: 255 if p > 50 else 0))
+        return mask_array / 255.0
 
     wave = VideoClip(make_frame, duration=duration)
     return wave.set_mask(VideoClip(make_mask, ismask=True, duration=duration))
@@ -158,9 +157,27 @@ def build_video(dialogs, audio_files):
     # Xử lý Background
     if selected_bg:
         if selected_bg.lower().endswith(".mp4"):
-            bg = VideoFileClip(selected_bg).resize(VIDEO_SIZE).loop(duration=total_duration)
+            # Đối với Video nền
+            bg = VideoFileClip(selected_bg).resize(height=VIDEO_SIZE[1]) # Ưu tiên chiều cao
+            if bg.w > VIDEO_SIZE[0]:
+                bg = bg.crop(x_center=bg.w/2, width=VIDEO_SIZE[0]) # Cắt phần dư 2 bên
+            bg = bg.loop(duration=total_duration)
         else:
-            bg = ImageClip(selected_bg).set_duration(total_duration).resize(VIDEO_SIZE)
+            # Đối với Hình ảnh nền
+            img_temp = Image.open(selected_bg)
+            img_ratio = img_temp.width / img_temp.height
+            target_ratio = VIDEO_SIZE[0] / VIDEO_SIZE[1]
+
+            if img_ratio > target_ratio:
+                # Hình gốc quá rộng -> Resize theo chiều cao rồi cắt 2 bên
+                bg = ImageClip(selected_bg).resize(height=VIDEO_SIZE[1])
+                bg = bg.crop(x_center=bg.w/2, width=VIDEO_SIZE[0])
+            else:
+                # Hình gốc quá cao -> Resize theo chiều rộng rồi cắt trên dưới
+                bg = ImageClip(selected_bg).resize(width=VIDEO_SIZE[0])
+                bg = bg.crop(y_center=bg.h/2, height=VIDEO_SIZE[1])
+                
+            bg = bg.set_duration(total_duration)
     else:
         bg = ColorClip(size=VIDEO_SIZE, color=(30, 30, 30), duration=total_duration)
 
@@ -174,7 +191,7 @@ def build_video(dialogs, audio_files):
             txt = animated_text(dialog[1], dialog[2], duration=dur).set_start(timeline)
         
         # Waveform
-        wave = make_waveform_clip(audio_files[i], dur).set_start(timeline).set_position(('center', 410))
+        wave = make_waveform_clip(audio_files[i], dur).set_start(timeline).set_position(('center', 650))
 
         video_clips.append(txt)
         video_clips.append(wave)
@@ -185,7 +202,7 @@ def build_video(dialogs, audio_files):
     final_video = CompositeVideoClip([bg] + video_clips, size=VIDEO_SIZE).set_audio(final_audio)
     
     out_path = os.path.join(OUTPUT_DIR, "final_podcast.mp4")
-    final_video.write_videofile(out_path, fps=24, codec="libx264", audio_codec="aac", temp_audiofile='temp-audio.m4a', remove_temp=True)
+    final_video.write_videofile(out_path, fps=15, codec="libx264", audio_codec="aac", temp_audiofile='temp-audio.m4a', remove_temp=True)
     
     # Clean up
     for a in loaded_audios: a.close()
