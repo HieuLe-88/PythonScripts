@@ -73,38 +73,59 @@ def draw_center_text(draw, text, font, center_x, y, max_width, fill=(0,0,0,255))
 # ---------- ANIMATED TEXT (Đã điều chỉnh tọa độ cho 1080p) ----------
 def animated_text(*args, duration=None):
     W, H = VIDEO_SIZE
-    # Điều chỉnh độ cao khung Sub cho khung hình 1080
     rect_height = 200
     rect_y = H - 300 
     center_x = W // 2
 
     def make_frame(t):
-        img = Image.new("RGBA", (W, H), (0,0,0,0))
+        # Tạo canvas RGBA
+        img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         
-        # Vẽ khung nền phụ đề rộng hơn cho 1080p
-        draw.rectangle([(0, rect_y), (W, rect_y + rect_height)], fill=(255, 255, 255, 255))
+        # 1. Vẽ nền sub màu xám (R=128, G=128, B=128)
+        # Màu này sẽ kết hợp với Mask bên dưới để tạo độ trong suốt
+        draw.rectangle([(0, rect_y), (W, rect_y + rect_height)], fill=(100, 100, 100, 255))
         
+        # 2. Vẽ chữ màu trắng
+        text_color = (255, 255, 255, 255)
+
         if selected_language == "Chinese":
-            # Tăng size font cho vừa khung hình lớn
             f_h = ImageFont.truetype(FONT_HANZI_PATH, 75)
             f_p = ImageFont.truetype(FONT_PINYIN_PATH, 45)
             f_e = ImageFont.truetype(FONT_LATIN_PATH, 45)
-            draw_center_text(draw, args[0], f_h, center_x, rect_y + 20, W-200)
-            draw_center_text(draw, args[1], f_p, center_x, rect_y + 105, W-200)
-            draw_center_text(draw, args[2], f_e, center_x, rect_y + 155, W-200)
+            draw_center_text(draw, args[0], f_h, center_x, rect_y + 20, W-200, fill=text_color)
+            draw_center_text(draw, args[1], f_p, center_x, rect_y + 105, W-200, fill=text_color)
+            draw_center_text(draw, args[2], f_e, center_x, rect_y + 155, W-200, fill=text_color)
         else:
             font = ImageFont.truetype(FONT_LATIN_PATH, 55)
-            draw_center_text(draw, args[0], font, center_x, rect_y + 40, W-200)
-            draw_center_text(draw, args[1], font, center_x, rect_y + 115, W-200)
+            draw_center_text(draw, args[0], font, center_x, rect_y + 40, W-200, fill=text_color)
+            draw_center_text(draw, args[1], font, center_x, rect_y + 115, W-200, fill=text_color)
         
         return np.array(img.convert("RGB"))
 
     def make_mask(t):
-        img = Image.new("RGBA", (W, H), (0,0,0,0))
+        # Mask: Đen (0) là biến mất hoàn toàn, Trắng (255) là hiện rõ 100%
+        img = Image.new("L", (W, H), 0)
         draw = ImageDraw.Draw(img)
-        draw.rectangle([(0, rect_y), (W, rect_y + rect_height)], fill=(255, 255, 255, 255))
-        return np.array(img.convert("L")) / 255.0
+        
+        # 3. Vẽ mặt nạ cho nền: Màu xám 60% (255 * 0.6 = 153)
+        # Điều này tạo ra hiệu ứng semi-transparent cho hình chữ nhật xám
+        draw.rectangle([(0, rect_y), (W, rect_y + rect_height)], fill=153)
+        
+        # 4. Vẽ mặt nạ cho chữ: Màu trắng (255) để chữ hiện rõ hoàn toàn 100%
+        if selected_language == "Chinese":
+            f_h = ImageFont.truetype(FONT_HANZI_PATH, 75)
+            f_p = ImageFont.truetype(FONT_PINYIN_PATH, 45)
+            f_e = ImageFont.truetype(FONT_LATIN_PATH, 45)
+            draw_center_text(draw, args[0], f_h, center_x, rect_y + 20, W-200, fill=255)
+            draw_center_text(draw, args[1], f_p, center_x, rect_y + 105, W-200, fill=255)
+            draw_center_text(draw, args[2], f_e, center_x, rect_y + 155, W-200, fill=255)
+        else:
+            font = ImageFont.truetype(FONT_LATIN_PATH, 55)
+            draw_center_text(draw, args[0], font, center_x, rect_y + 40, W-200, fill=255)
+            draw_center_text(draw, args[1], font, center_x, rect_y + 115, W-200, fill=255)
+            
+        return np.array(img) / 255.0
 
     return VideoClip(make_frame, duration=duration).set_mask(VideoClip(make_mask, ismask=True, duration=duration))
 
@@ -157,27 +178,23 @@ def build_video(dialogs, audio_files):
     # Xử lý Background
     if selected_bg:
         if selected_bg.lower().endswith(".mp4"):
-            # Đối với Video nền
-            bg = VideoFileClip(selected_bg).resize(height=VIDEO_SIZE[1]) # Ưu tiên chiều cao
+            bg = VideoFileClip(selected_bg).resize(height=VIDEO_SIZE[1])
+            # Nếu video quá rộng, cắt bớt 2 bên để giữ tỷ lệ
             if bg.w > VIDEO_SIZE[0]:
-                bg = bg.crop(x_center=bg.w/2, width=VIDEO_SIZE[0]) # Cắt phần dư 2 bên
+                bg = bg.crop(x_center=bg.w/2, width=VIDEO_SIZE[0])
             bg = bg.loop(duration=total_duration)
         else:
-            # Đối với Hình ảnh nền
-            img_temp = Image.open(selected_bg)
-            img_ratio = img_temp.width / img_temp.height
-            target_ratio = VIDEO_SIZE[0] / VIDEO_SIZE[1]
-
-            if img_ratio > target_ratio:
-                # Hình gốc quá rộng -> Resize theo chiều cao rồi cắt 2 bên
-                bg = ImageClip(selected_bg).resize(height=VIDEO_SIZE[1])
-                bg = bg.crop(x_center=bg.w/2, width=VIDEO_SIZE[0])
-            else:
-                # Hình gốc quá cao -> Resize theo chiều rộng rồi cắt trên dưới
-                bg = ImageClip(selected_bg).resize(width=VIDEO_SIZE[0])
-                bg = bg.crop(y_center=bg.h/2, height=VIDEO_SIZE[1])
-                
-            bg = bg.set_duration(total_duration)
+            # Đối với hình ảnh: Resize sao cho phủ kín chiều cao, sau đó cắt phần thừa chiều rộng
+            bg = ImageClip(selected_bg).set_duration(total_duration)
+            
+            # Tính toán tỷ lệ để resize không bị méo
+            bg = bg.resize(height=VIDEO_SIZE[1]) # Ưu tiên chiều cao 1080
+            if bg.w < VIDEO_SIZE[0]: # Nếu sau khi resize vẫn thiếu chiều rộng
+                bg = bg.resize(width=VIDEO_SIZE[0])
+            
+            # Cắt bỏ phần thừa để về đúng 1920x1080
+            bg = bg.crop(x_center=bg.w/2, y_center=bg.h/2, 
+                         width=VIDEO_SIZE[0], height=VIDEO_SIZE[1])
     else:
         bg = ColorClip(size=VIDEO_SIZE, color=(30, 30, 30), duration=total_duration)
 
