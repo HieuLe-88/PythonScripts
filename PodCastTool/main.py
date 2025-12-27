@@ -5,27 +5,41 @@ import os
 import subprocess
 import edge_tts
 import threading
-import re  # Thêm re để xử lý chuỗi log
+import re
 
 # ---------- CONFIG ----------
 VIDEO_SIZE = "1920x1080"
 OUTPUT_DIR = "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# Đường dẫn font
 FONT_LATIN = "C\\:/Windows/Fonts/arial.ttf"
 FONT_CHINESE = "C\\:/Users/USER/AppData/Local/Microsoft/Windows/Fonts/NotoSansCJKsc-Regular.otf"
 
+# DANH SÁCH GIỌNG NÓI MỞ RỘNG
 LANG_VOICES = {
-    "Vietnamese": {"male": "vi-VN-NamMinhNeural", "female": "vi-VN-HoaiMyNeural"},
-    "Spanish": {"male": "es-ES-AlvaroNeural", "female": "es-ES-ElviraNeural"},
-    "Chinese": {"male": "zh-CN-YunxiNeural", "female": "zh-CN-XiaoxiaoNeural"},
+    "Vietnamese": {
+        "Mặc định (Nam Minh & Hoài My)": {
+            "male": "vi-VN-NamMinhNeural", 
+            "female": "vi-VN-HoaiMyNeural"
+        }
+    },
+    "Chinese": {
+        "Yunxi & Xiaoxiao (Phổ thông)": {"male": "zh-CN-YunxiNeural", "female": "zh-CN-XiaoxiaoNeural"},
+        "Yunjian & Xiaoyi (Sâu lắng)": {"male": "zh-CN-YunjianNeural", "female": "zh-CN-XiaoyiNeural"},
+        "Yunfeng & Xiaoni (Tươi vui)": {"male": "zh-CN-YunfengNeural", "female": "zh-CN-XiaoniNeural"},
+    },
+    "Spanish": {
+        "Alvaro & Elvira (Tây Ban Nha)": {"male": "es-ES-AlvaroNeural", "female": "es-ES-ElviraNeural"},
+        "Arnau & Estrella (Tây Ban Nha)": {"male": "es-ES-ArnauNeural", "female": "es-ES-EstrellaNeural"},
+        "Jorge & Dalia (Mexico)": {"male": "es-MX-JorgeNeural", "female": "es-MX-DaliaNeural"},
+    }
 }
 
 selected_bg = None
 
 # ---------- HELPER FUNCTIONS ----------
 def get_seconds(time_str):
-    """Chuyển đổi HH:MM:SS.ms thành giây"""
     h, m, s = time_str.split(':')
     return int(h) * 3600 + int(m) * 60 + float(s)
 
@@ -47,16 +61,19 @@ def parse_input(text, lang):
             dialogs.append((parts[0].strip(), parts[1].strip(), parts[2].strip()))
     return dialogs
 
-async def generate_assets(dialogs, lang, rate_str):
+async def generate_assets(dialogs, lang, voice_pack_name, rate_str):
     speed_map = {"100%": "+0Hz", "90%": "-10%", "80%": "-20%", "70%": "-30%"}
     rate = speed_map.get(rate_str, "+0Hz")
+    
+    # Lấy pack giọng đã chọn
+    pack = LANG_VOICES[lang][voice_pack_name]
     
     audio_files = []
     srt_content = ""
     timeline = 0.0
     
     for i, d in enumerate(dialogs):
-        voice = LANG_VOICES[lang]["male"] if d[0] == "M" else LANG_VOICES[lang]["female"]
+        voice = pack["male"] if d[0] == "M" else pack["female"]
         audio_path = os.path.join(OUTPUT_DIR, f"audio_{i}.mp3")
         await edge_tts.Communicate(d[1], voice, rate=rate).save(audio_path)
         
@@ -102,7 +119,7 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, progress_call
                  f"PrimaryColour=&HFFFFFF,BorderStyle=3,OutlineColour=&H99333333,"
                  f"Alignment=2,MarginV=40'")
 
-    out_video = os.path.join(OUTPUT_DIR, "final_podcast.mp4")
+    out_video = os.path.join(OUTPUT_DIR, f"podcast_{lang}.mp4")
     
     bg_input = ["-f", "lavfi", "-i", "color=c=black:s=1920x1080"]
     if selected_bg:
@@ -124,49 +141,41 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, progress_call
         out_video
     ]
     
-    # Chạy FFmpeg và bắt log stderr
     process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, encoding='utf-8')
-
-    # Regex để tìm thời gian hiện tại trong log: time=00:00:05.12
     time_pattern = re.compile(r"time=(\d{2}:\d{2}:\d{2}\.\d{2})")
 
     while True:
         line = process.stdout.readline()
-        if not line:
-            break
-        
+        if not line: break
         match = time_pattern.search(line)
         if match:
-            current_time_str = match.group(1)
-            current_seconds = get_seconds(current_time_str)
+            current_seconds = get_seconds(match.group(1))
             percentage = min(int((current_seconds / total_dur) * 100), 100)
             progress_callback(percentage)
 
     process.wait()
 
-# ---------- BẮT ĐẦU XÓA FILE TẠM ----------
-    print("Đang dọn dẹp file tạm...")
+    # Dọn dẹp file
     try:
-        # Xóa các file audio nhỏ
         for audio in audio_files:
-            if os.path.exists(audio):
-                os.remove(audio)
-        
-        # Xóa file audio tổng hợp
-        if os.path.exists(full_audio):
-            os.remove(full_audio)
-            
-        # Xóa file danh sách audio
-        if os.path.exists(list_path):
-            os.remove(list_path)
-        
-    except Exception as e:
-        print(f"Lỗi khi xóa file: {e}")
-    # ---------- KẾT THÚC XÓA ----------
+            if os.path.exists(audio): os.remove(audio)
+        if os.path.exists(full_audio): os.remove(full_audio)
+        if os.path.exists(list_path): os.remove(list_path)
+    except: pass
 
     return out_video
 
 # ---------- GUI FUNCTIONS ----------
+def update_voice_options(*args):
+    """Cập nhật dropdown giọng nói khi đổi ngôn ngữ"""
+    lang = lang_var.get()
+    packs = list(LANG_VOICES[lang].keys())
+    voice_pack_var.set(packs[0]) # Reset về cái đầu tiên
+    menu = voice_menu['menu']
+    menu.delete(0, 'end')
+    for pack in packs:
+        menu.add_command(label=pack, command=lambda p=pack: voice_pack_var.set(p))
+
 def update_progress(val):
     progress_bar['value'] = val
     percent_label.config(text=f"{val}%")
@@ -174,6 +183,7 @@ def update_progress(val):
 
 def run_processing():
     lang = lang_var.get()
+    voice_pack = voice_pack_var.get()
     text = text_box.get("1.0", tk.END).strip()
     dialogs = parse_input(text, lang)
     
@@ -186,11 +196,9 @@ def run_processing():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-        # Bước 1: Audio (giả định chiếm 10% quá trình)
         percent_label.config(text="Đang tạo giọng nói...")
-        audio_files, total_dur = loop.run_until_complete(generate_assets(dialogs, lang, speed_var.get()))
+        audio_files, total_dur = loop.run_until_complete(generate_assets(dialogs, lang, voice_pack, speed_var.get()))
         
-        # Bước 2: Render Video (chiếm từ 10% đến 100%)
         out = build_video_ffmpeg_with_progress(audio_files, total_dur, lang, update_progress)
         
         update_progress(100)
@@ -215,34 +223,51 @@ def choose_background():
 # ---------- GUI LAYOUT ----------
 root = tk.Tk()
 root.title("AI Podcast - FFmpeg Turbo Mode")
+root.geometry("700x650")
 
-tk.Label(root, text="Chọn ngôn ngữ:").pack()
+# Frame cấu hình
+cfg_frame = tk.LabelFrame(root, text=" Cấu hình Voice & Ngôn ngữ ", padx=10, pady=10)
+cfg_frame.pack(pady=10, fill="x", padx=20)
+
+tk.Label(cfg_frame, text="Ngôn ngữ:").grid(row=0, column=0, sticky="w")
 lang_var = tk.StringVar(value="Vietnamese")
-tk.OptionMenu(root, lang_var, "Vietnamese", "Spanish", "Chinese").pack()
+lang_var.trace('w', update_voice_options)
+tk.OptionMenu(cfg_frame, lang_var, *LANG_VOICES.keys()).grid(row=0, column=1, padx=10, sticky="w")
 
-tk.Label(root, text="Tốc độ nói:").pack()
+tk.Label(cfg_frame, text="Bộ giọng (Pack):").grid(row=1, column=0, sticky="w")
+voice_pack_var = tk.StringVar()
+voice_menu = tk.OptionMenu(cfg_frame, voice_pack_var, "")
+voice_menu.grid(row=1, column=1, padx=10, sticky="w")
+
+tk.Label(cfg_frame, text="Tốc độ:").grid(row=0, column=2, padx=20, sticky="w")
 speed_var = tk.StringVar(value="100%")
-tk.OptionMenu(root, speed_var, "100%", "90%", "80%", "70%").pack()
+tk.OptionMenu(cfg_frame, speed_var, "100%", "90%", "80%", "70%").grid(row=0, column=3, sticky="w")
 
-tk.Button(root, text="Chọn Hình Nền / Video Nền", command=choose_background).pack(pady=5)
-bg_label = tk.Label(root, text="Chưa chọn nền")
-bg_label.pack()
+# Cập nhật giọng nói lần đầu
+update_voice_options()
 
-text_box = tk.Text(root, width=80, height=12)
-text_box.pack(pady=10)
+# Frame Nền
+bg_frame = tk.Frame(root)
+bg_frame.pack(pady=5)
+tk.Button(bg_frame, text="Chọn Hình Nền / Video Nền", command=choose_background).pack(side=tk.LEFT)
+bg_label = tk.Label(bg_frame, text="Chưa chọn nền", fg="blue", padx=10)
+bg_label.pack(side=tk.LEFT)
+
+# Text Box
+text_box = tk.Text(root, width=80, height=12, font=("Consolas", 10))
+text_box.pack(pady=10, padx=20)
 text_box.insert("1.0", "M|Xin chào các bạn|Chào mừng đến với Podcast\nF|Chào anh Nam|Rất vui được gặp anh")
 
-# Progress Bar với %
+# Progress Bar
 progress_frame = tk.Frame(root)
 progress_frame.pack(pady=10)
-
 progress_bar = ttk.Progressbar(progress_frame, orient="horizontal", length=400, mode="determinate")
 progress_bar.pack(side=tk.LEFT, padx=5)
-
-percent_label = tk.Label(progress_frame, text="0%", width=20)
+percent_label = tk.Label(progress_frame, text="Sẵn sàng", width=25)
 percent_label.pack(side=tk.LEFT)
 
-generate_btn = tk.Button(root, text="BẮT ĐẦU RENDER", command=generate, bg="#27ae60", fg="white", font=('Arial', 10, 'bold'), height=2, width=20)
-generate_btn.pack(pady=10)
+# Nút Render
+generate_btn = tk.Button(root, text="BẮT ĐẦU RENDER", command=generate, bg="#27ae60", fg="white", font=('Arial', 11, 'bold'), height=2, width=30)
+generate_btn.pack(pady=15)
 
 root.mainloop()
