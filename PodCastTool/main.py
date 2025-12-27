@@ -62,7 +62,13 @@ def parse_input(text, lang):
     return dialogs
 
 async def generate_assets(dialogs, lang, voice_pack_name, rate_str):
-    speed_map = {"100%": "+0Hz", "90%": "-10%", "80%": "-20%", "70%": "-30%"}
+    speed_map = {
+    "100%": "+0%",
+    "90%": "-10%",
+    "80%": "-20%",
+    "70%": "-30%"
+    }
+    
     rate = speed_map.get(rate_str, "+0Hz")
     
     # Lấy pack giọng đã chọn
@@ -104,7 +110,7 @@ async def generate_assets(dialogs, lang, voice_pack_name, rate_str):
         
     return audio_files, timeline
 
-def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, progress_callback):
+def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitles, progress_callback):
     list_path = os.path.join(OUTPUT_DIR, "audio_list.txt")
     with open(list_path, "w") as f:
         for audio in audio_files:
@@ -119,6 +125,17 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, progress_call
                  f"PrimaryColour=&HFFFFFF,BorderStyle=3,OutlineColour=&H99333333,"
                  f"Alignment=2,MarginV=40'")
 
+    filter_chain = (
+        f"[0:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080[bg];"
+        f"[1:a]showwaves=s=800x200:mode=line:colors=white:draw=full[wave];"
+        f"[bg][wave]overlay=(W-w)/2:600[v_wave];"
+    )
+
+    if show_subtitles:
+        filter_chain += f"[v_wave]{sub_style},fps=12[v]"
+    else:
+        filter_chain += "[v_wave]fps=12[v]"
+
     out_video = os.path.join(OUTPUT_DIR, f"podcast_{lang}.mp4")
     
     bg_input = ["-f", "lavfi", "-i", "color=c=black:s=1920x1080"]
@@ -129,18 +146,19 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, progress_call
             bg_input = ["-loop", "1", "-i", selected_bg]
 
     cmd = [
-        "ffmpeg", "-y", *bg_input, "-i", full_audio,
-        "-filter_complex",
-        f"[0:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080[bg];"
-        f"[1:a]showwaves=s=800x200:mode=line:colors=white:draw=full[wave];"
-        f"[bg][wave]overlay=(W-w)/2:600[v_wave];"
-        f"[v_wave]{sub_style},fps=12[v]",
-        "-map", "[v]", "-map", "1:a",
-        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
-        "-c:a", "aac", "-t", str(total_dur),
+        "ffmpeg", "-y",
+        *bg_input,
+        "-i", full_audio,
+        "-filter_complex", filter_chain,
+        "-map", "[v]",
+        "-map", "1:a",
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "23",
+        "-c:a", "aac",
+        "-t", str(total_dur),
         out_video
     ]
-    
     process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, encoding='utf-8')
     time_pattern = re.compile(r"time=(\d{2}:\d{2}:\d{2}\.\d{2})")
 
@@ -199,7 +217,13 @@ def run_processing():
         percent_label.config(text="Đang tạo giọng nói...")
         audio_files, total_dur = loop.run_until_complete(generate_assets(dialogs, lang, voice_pack, speed_var.get()))
         
-        out = build_video_ffmpeg_with_progress(audio_files, total_dur, lang, update_progress)
+        out = build_video_ffmpeg_with_progress(
+            audio_files,
+            total_dur,
+            lang,
+            show_sub_var.get(),
+            update_progress
+        )
         
         update_progress(100)
         messagebox.showinfo("Thành công", f"Video đã lưu tại:\n{out}")
@@ -242,6 +266,14 @@ voice_menu.grid(row=1, column=1, padx=10, sticky="w")
 tk.Label(cfg_frame, text="Tốc độ:").grid(row=0, column=2, padx=20, sticky="w")
 speed_var = tk.StringVar(value="100%")
 tk.OptionMenu(cfg_frame, speed_var, "100%", "90%", "80%", "70%").grid(row=0, column=3, sticky="w")
+
+show_sub_var = tk.BooleanVar(value=True)
+
+tk.Checkbutton(
+    cfg_frame,
+    text="Hiển thị Subtitle",
+    variable=show_sub_var
+).grid(row=1, column=2, columnspan=2, sticky="w")
 
 # Cập nhật giọng nói lần đầu
 update_voice_options()
