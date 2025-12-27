@@ -1,20 +1,148 @@
 1
-00:00:00,000 --> 00:00:04,248
-{\fs17}还要考虑酒店和民宿的预订。\N{\fs15}Hái yào kǎolǜ jiǔdiàn hé mínsù de yùdìng.\N{\fs13}Also, consider booking hotels and homestays.
+00:00:00,000 --> 00:00:03,839
+{\fs17}你好，你最近怎么样？\N{\fs15}Nǐ hǎo, nǐ zuìjìn zěnme yàng?\N{\fs13}Hi, how have you been recently?
 
 2
-00:00:04,248 --> 00:00:09,480
-{\fs17}最好选靠近海边且交通方便的地方。\N{\fs15}Zuì hǎo xuǎn kàojìn hǎibiān qiě jiāotōng fāngbiàn de dìfang.\N{\fs13}It's best to choose somewhere near the beach and convenient to move around.
+00:00:03,839 --> 00:00:08,399
+{\fs17}我很好，谢谢。你呢？\N{\fs15}Wǒ hěn hǎo, xièxie. Nǐ ne?\N{\fs13}I'm good, thanks. And you?
 
 3
-00:00:09,480 --> 00:00:13,536
-{\fs17}我也想体验当地的文化活动。\N{\fs15}Wǒ yě xiǎng tǐyàn dāngdì de wénhuà huódòng.\N{\fs13}I also want to experience local cultural activities.
+00:00:08,399 --> 00:00:14,207
+{\fs17}我也不错。我们今天聊聊周末计划吧。\N{\fs15}Wǒ yě búcuò. Wǒmen jīntiān liáo liáo zhōumò jìhuà ba.\N{\fs13}I'm fine too. Let's talk about weekend plans today.
 
 4
-00:00:13,536 --> 00:00:18,024
-{\fs17}那我们就准备详细的行程安排吧。\N{\fs15}Nà wǒmen jiù zhǔnbèi xiángxì de xíngchéng ānpái ba.\N{\fs13}Then let's prepare a detailed itinerary.
+00:00:14,207 --> 00:00:19,247
+{\fs17}好主意！你周末通常做什么？\N{\fs15}Hǎo zhǔyì! Nǐ zhōumò tōngcháng zuò shénme?\N{\fs13}Good idea! What do you usually do on weekends?
 
 5
-00:00:18,024 --> 00:00:22,056
-{\fs17}听起来真棒，我非常期待。\N{\fs15}Tīng qǐlái zhēn bàng, wǒ fēicháng qídài.\N{\fs13}Sounds wonderful, I'm really excited.
+00:00:19,247 --> 00:00:24,239
+{\fs17}我常常和朋友见面，或者在家休息。\N{\fs15}Wǒ chángcháng hé péngyou jiànmiàn, huòzhě zài jiā xiūxi.\N{\fs13}I often meet friends or rest at home.
+
+6
+00:00:24,239 --> 00:00:30,791
+{\fs17}听起来很放松。这个周末你有什么特别计划吗？\N{\fs15}Tīng qǐlai hěn fàngsōng. Zhège zhōumò nǐ yǒu shénme tèbié jìhuà ma?\N{\fs13}Sounds relaxing. Do you have any special plans this weekend?
+
+7
+00:00:30,791 --> 00:00:36,768
+{\fs17}我想去公园散步，看书，也可能去看电影。\N{\fs15}Wǒ xiǎng qù gōngyuán sànbù, kàn shū, yě kěnéng qù kàn diànyǐng.\N{\fs13}I want to go to the park for a walk, read, and maybe watch a movie.
+
+8
+00:00:36,768 --> 00:00:40,439
+{\fs17}你喜欢看什么类型的电影？\N{\fs15}Nǐ xǐhuan kàn shénme lèixíng de diànyǐng?\N{\fs13}What kind of movies do you like?
+
+9
+00:00:40,439 --> 00:00:46,655
+{\fs17}我喜欢喜剧和家庭片，太紧张的我不太喜欢。\N{\fs15}Wǒ xǐhuan xǐjù hé jiātíng piàn, tài jǐnzhāng de wǒ bú tài xǐhuan.\N{\fs13}I like comedies and family films; I don't like very tense ones.
+
+10
+00:00:46,655 --> 00:00:53,591
+{\fs17}我也是。我们可以一起去看电影，然后去吃饭。\N{\fs15}Wǒ yě shì. Wǒmen kěyǐ yìqǐ qù kàn diànyǐng, ránhòu qù chīfàn.\N{\fs13}Me too. We can go to a movie together and then eat out.
+
+11
+00:00:53,591 --> 00:00:58,871
+{\fs17}好啊。你想去哪个电影院？\N{\fs15}Hǎo a. Nǐ xiǎng qù nǎge diànyǐngyuàn?\N{\fs13}Great. Which cinema do you want to go to?
+
+12
+00:00:58,871 --> 00:01:05,111
+{\fs17}市中心那家电影院很方便，离公园也不远。\N{\fs15}Shì zhōngxīn nà jiā diànyǐngyuàn hěn fāngbiàn, lí gōngyuán yě bú yuǎn.\N{\fs13}The downtown cinema is convenient and not far from the park.
+
+13
+00:01:05,111 --> 00:01:10,247
+{\fs17}那太好了。电影几点开始？\N{\fs15}Nà tài hǎo le. Diànyǐng jǐ diǎn kāishǐ?\N{\fs13}That's great. What time does the movie start?
+
+14
+00:01:10,247 --> 00:01:17,999
+{\fs17}下午三点有一场，也有晚上七点的。你更喜欢什么时候？\N{\fs15}Xiàwǔ sān diǎn yǒu yì chǎng, yě yǒu wǎnshàng qī diǎn de. Nǐ gèng xǐhuan shénme shíhou?\N{\fs13}There is one at 3 PM and another at 7 PM. Which do you prefer?
+
+15
+00:01:17,999 --> 00:01:23,831
+{\fs17}我喜欢下午的场次，这样晚饭可以早点吃。\N{\fs15}Wǒ xǐhuan xiàwǔ de chǎngcì, zhèyàng wǎnfàn kěyǐ zǎodiǎn chī.\N{\fs13}I prefer the afternoon show so we can have dinner earlier.
+
+16
+00:01:23,831 --> 00:01:29,591
+{\fs17}好的，我们可以三点见面，在公园门口。\N{\fs15}Hǎo de, wǒmen kěyǐ sān diǎn jiànmiàn, zài gōngyuán ménkǒu.\N{\fs13}Okay, we can meet at 3 at the park entrance.
+
+17
+00:01:29,591 --> 00:01:35,495
+{\fs17}那我们先在公园走走，天气如果好可以拍照。\N{\fs15}Nà wǒmen xiān zài gōngyuán zǒuzou, tiānqì rúguǒ hǎo kěyǐ pāizhào.\N{\fs13}Then we'll walk in the park first; if the weather is good, we can take photos.
+
+18
+00:01:35,495 --> 00:01:40,175
+{\fs17}听起来很棒。我会带相机。\N{\fs15}Tīng qǐlai hěn bàng. Wǒ huì dài xiàngjī.\N{\fs13}Sounds great. I'll bring a camera.
+
+19
+00:01:40,175 --> 00:01:47,159
+{\fs17}电影票你要提前买吗？现在买可能更便宜。\N{\fs15}Diànyǐng piào nǐ yào tíqián mǎi ma? Xiànzài mǎi kěnéng gèng piányi.\N{\fs13}Do you want to buy movie tickets in advance? Buying now might be cheaper.
+
+20
+00:01:47,159 --> 00:01:52,559
+{\fs17}好主意。我现在就在网上订票。\N{\fs15}Hǎo zhǔyì. Wǒ xiànzài jiù zài wǎngshàng dìng piào.\N{\fs13}Good idea. I'll book tickets online now.
+
+21
+00:01:52,559 --> 00:01:59,903
+{\fs17}谢谢！那我们吃饭的时候可以聊聊天，放松一下。\N{\fs15}Xièxie! Nà wǒmen chīfàn de shíhou kěyǐ liáo liáotiān, fàngsōng yíxià.\N{\fs13}Thanks! Then we can chat and relax while eating.
+
+22
+00:01:59,903 --> 00:02:06,575
+{\fs17}吃什么好呢？我想吃简单的中餐或者披萨。\N{\fs15}Chī shénme hǎo ne? Wǒ xiǎng chī jiǎndān de zhōngcān huòzhě pīsà.\N{\fs13}What should we eat? I want simple Chinese food or pizza.
+
+23
+00:02:06,575 --> 00:02:13,559
+{\fs17}附近有一家小餐馆，中餐很家常，价格也合理。\N{\fs15}Fùjìn yǒu yì jiā xiǎo cānguǎn, zhōngcān hěn jiācháng, jiàgé yě hélǐ.\N{\fs13}There is a small restaurant nearby with homestyle Chinese food and reasonable prices.
+
+24
+00:02:13,559 --> 00:02:19,631
+{\fs17}那我们就去那家。吃完饭后你想做什么？\N{\fs15}Nà wǒmen jiù qù nà jiā. Chī wán fàn hòu nǐ xiǎng zuò shénme?\N{\fs13}Then let's go there. After dinner, what do you want to do?
+
+25
+00:02:19,631 --> 00:02:25,655
+{\fs17}也许我们可以去附近的咖啡馆喝杯咖啡，慢慢聊。\N{\fs15}Yěxǔ wǒmen kěyǐ qù fùjìn de kāfēiguǎn hē bēi kāfēi, mànmàn liáo.\N{\fs13}Maybe we can go to a nearby cafe for coffee and talk slowly.
+
+26
+00:02:25,655 --> 00:02:30,551
+{\fs17}好啊。我喜欢安静的咖啡馆。\N{\fs15}Hǎo a. Wǒ xǐhuan ānjìng de kāfēiguǎn.\N{\fs13}Great. I like quiet cafes.
+
+27
+00:02:30,551 --> 00:02:37,727
+{\fs17}交通方面你要怎么来？坐公交还是打车？\N{\fs15}Jiāotōng fāngmiàn nǐ yào zěnme lái? Zuò gōngjiāo háishì dǎchē?\N{\fs13}How will you come? By bus or taxi?
+
+28
+00:02:37,727 --> 00:02:42,695
+{\fs17}我坐地铁，大约二十分钟就到。\N{\fs15}Wǒ zuò dìtiě, dàyuē èrshí fēnzhōng jiù dào.\N{\fs13}I'll take the subway; it takes about 20 minutes.
+
+29
+00:02:42,695 --> 00:02:46,511
+{\fs17}那我会提前到公园等你。\N{\fs15}Nà wǒ huì tíqián dào gōngyuán děng nǐ.\N{\fs13}I'll arrive early at the park to wait for you.
+
+30
+00:02:46,511 --> 00:02:49,655
+{\fs17}好的，到时候见！\N{\fs15}Hǎo de, dào shíhou jiàn!\N{\fs13}Okay, see you then!
+
+31
+00:02:49,655 --> 00:02:54,671
+{\fs17}等一下，如果下雨我们怎么办？\N{\fs15}Děng yíxià, rúguǒ xiàyǔ wǒmen zěnme bàn?\N{\fs13}Wait, what if it rains?
+
+32
+00:02:54,671 --> 00:03:02,471
+{\fs17}如果下雨，我们可以改在电影院见面，直接进去看电影。\N{\fs15}Rúguǒ xiàyǔ, wǒmen kěyǐ gǎi zài diànyǐngyuàn jiànmiàn, zhíjiē jìnqù kàn diànyǐng.\N{\fs13}If it rains, we can meet at the cinema and go straight in.
+
+33
+00:03:02,471 --> 00:03:08,111
+{\fs17}好计划。我会关注天气预报。\N{\fs15}Hǎo jìhuà. Wǒ huì guānzhù tiānqì yùbào.\N{\fs13}Good plan. I'll check the weather forecast.
+
+34
+00:03:08,111 --> 00:03:13,079
+{\fs17}太好了。我很期待这个周末。\N{\fs15}Tài hǎo le. Wǒ hěn qídài zhège zhōumò.\N{\fs13}Great. I'm looking forward to this weekend.
+
+35
+00:03:13,079 --> 00:03:18,071
+{\fs17}我也是。谢谢你一起安排。\N{\fs15}Wǒ yě shì. Xièxie nǐ yìqǐ ānpái.\N{\fs13}Me too. Thank you for arranging it with me.
+
+36
+00:03:18,071 --> 00:03:22,895
+{\fs17}不客气。周末见，再见！\N{\fs15}Bù kèqi. Zhōumò jiàn, zàijiàn!\N{\fs13}You're welcome. See you on the weekend, goodbye!
+
+37
+00:03:22,895 --> 00:03:26,015
+{\fs17}再见，保重！\N{\fs15}Zàijiàn, bǎozhòng!\N{\fs13}Goodbye, take care!
 
