@@ -20,12 +20,11 @@ VIDEO_SIZE = (1280, 720)
 OUTPUT_DIR = "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Fonts (update đường dẫn chính xác trên máy bạn)
-FONT_HANZI_PATH = "C:/Users/USER/AppData/Local/Microsoft/Windows/Fonts/NotoSansCJKsc-Regular.otf"  # Cập nhật đúng đường dẫn font # Chinese Hán tự
-FONT_PINYIN_PATH = "fonts/arial.ttf"                  # Chinese Pinyin
-FONT_LATIN_PATH = "fonts/arial.ttf"                   # Vietnamese / Spanish
+# Đảm bảo các font này tồn tại hoặc thay bằng font hệ thống
+FONT_HANZI_PATH = "C:/Users/USER/AppData/Local/Microsoft/Windows/Fonts/NotoSansCJKsc-Regular.otf"
+FONT_PINYIN_PATH = "fonts/arial.ttf"
+FONT_LATIN_PATH = "fonts/arial.ttf"
 
-# TTS Voices
 LANG_VOICES = {
     "Vietnamese": {"male": "vi-VN-NamMinhNeural", "female": "vi-VN-HoaiMyNeural"},
     "Spanish": {"male": "es-ES-AlvaroNeural", "female": "es-ES-ElviraNeural"},
@@ -38,292 +37,205 @@ selected_male_voice = LANG_VOICES[selected_language]["male"]
 selected_female_voice = LANG_VOICES[selected_language]["female"]
 selected_bg = None
 
-# ---------- PARSE INPUT ----------
+# ---------- HELPER FUNCTIONS ----------
 def parse_input(text):
     dialogs = []
-    if selected_language == "Chinese":
-        for line in text.split("\n"):
-            line = line.strip()
-            parts = line.split("|")
-            if len(parts) == 4:  # Speaker|Hanzi|Pinyin|English
-                speaker, hanzi, pinyin, english = parts
-                dialogs.append((speaker.strip(), hanzi.strip(), pinyin.strip(), english.strip()))
-    else:
-        for line in text.split("\n"):
-            line = line.strip()
-            parts = line.split("|")
-            if len(parts) == 3:  # Speaker|Original|English
-                speaker, original, english = parts
-                dialogs.append((speaker.strip(), original.strip(), english.strip()))
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    for line in lines:
+        parts = line.split("|")
+        if selected_language == "Chinese" and len(parts) == 4:
+            dialogs.append((parts[0].strip(), parts[1].strip(), parts[2].strip(), parts[3].strip()))
+        elif selected_language != "Chinese" and len(parts) == 3:
+            dialogs.append((parts[0].strip(), parts[1].strip(), parts[2].strip()))
     return dialogs
 
-# ---------- DRAW MULTILINE ----------
-def draw_multiline(draw, text, font, x, y, max_width, fill=(255,255,255)):
-    if not text:
-        return
+def draw_center_text(draw, text, font, center_x, y, max_width, fill=(0,0,0,255)):
+    if not text: return
     lines = []
-    line = ""
-    for ch in text:
-        if draw.textlength(line + ch, font=font) > max_width:
-            lines.append(line)
-            line = ch
-        else:
-            line += ch
-    lines.append(line)
-    for i, l in enumerate(lines):
-        draw.text((x, y + i * (font.size + 5)), l, font=font, fill=fill)
-
-# ---------- ANIMATED TEXT ----------
-def animated_text(*args, duration=None, side="left", speaker="M"):
-    W, H = VIDEO_SIZE
-    max_width = W - 160
-    sub_height = 155  # chiều cao khung sub 
-    rect_y = H - sub_height - 60
-    
-    # Căn giữa: x là điểm bắt đầu, để draw_multiline căn giữa ta tính x là trung tâm
-    center_x = W // 2
-
-    if selected_language == "Chinese":
-        hanzi, pinyin, english_text = args
-        # Tăng size font thêm 20%
-        font_hanzi = ImageFont.truetype(FONT_HANZI_PATH, int(42 * 1.2))
-        font_pinyin = ImageFont.truetype(FONT_PINYIN_PATH, int(28 * 1.2))
-        font_en = ImageFont.truetype(FONT_LATIN_PATH, int(28 * 1.2))
-
-        def make_frame(t):
-            img = Image.new("RGBA", (W, H), (0,0,0,0))
-            draw = ImageDraw.Draw(img)
-            draw.rectangle([ (0, rect_y), (W, rect_y + sub_height) ], fill=(255,255,255,255))
-            
-            # Sử dụng hàm vẽ căn giữa
-            draw_center_text(draw, hanzi, font_hanzi, center_x, rect_y + 15, max_width, fill=(0,0,0,255))
-            draw_center_text(draw, pinyin, font_pinyin, center_x, rect_y + 75, max_width, fill=(0,0,0,255))
-            draw_center_text(draw, english_text, font_en, center_x, rect_y + 120, max_width, fill=(0,0,0,255))
-            return np.array(img.convert("RGB"))
-
-    else:
-        original_text, english_text = args
-        # Tăng size font thêm 20%
-        font_size = int(28 * 1.2)
-        font = ImageFont.truetype(FONT_LATIN_PATH, font_size)
-        font_en = ImageFont.truetype(FONT_LATIN_PATH, font_size)
-
-        def make_frame(t):
-            img = Image.new("RGBA", (W, H), (0,0,0,0))
-            draw = ImageDraw.Draw(img)
-            draw.rectangle([ (0, rect_y), (W, rect_y + sub_height) ], fill=(255,255,255,255))
-            
-            draw_center_text(draw, original_text, font, center_x, rect_y + 40, max_width, fill=(0,0,0,255))
-            draw_center_text(draw, english_text, font_en, center_x, rect_y + 95, max_width, fill=(0,0,0,255))
-            return np.array(img.convert("RGB"))
-
-    return VideoClip(make_frame, duration=duration).set_position("center")
-
-def draw_center_text(draw, text, font, center_x, y, max_width, fill=(255,255,255)):
-    if not text:
-        return
-    
-    # Chia dòng
-    lines = []
-    words = text.split(' ') if ' ' in text else list(text) # Tách từ cho Latin hoặc tách ký tự cho Chinese
-    
+    words = list(text) if selected_language == "Chinese" else text.split(' ')
     current_line = ""
     for unit in words:
-        test_line = current_line + (" " if current_line and ' ' in text else "") + unit
+        sep = "" if selected_language == "Chinese" else " "
+        test_line = current_line + (sep if current_line else "") + unit
         if draw.textlength(test_line, font=font) <= max_width:
             current_line = test_line
         else:
             lines.append(current_line)
             current_line = unit
     lines.append(current_line)
-
-    # Vẽ từng dòng căn giữa
     for i, line in enumerate(lines):
-        # Tính toán anchor 'mm' (middle-middle) để căn giữa hoàn hảo
         bbox = draw.textbbox((0, 0), line, font=font)
-        line_width = bbox[2] - bbox[0]
-        line_x = center_x - (line_width / 2)
-        draw.text((line_x, y + i * (font.size + 8)), line, font=font, fill=fill)
+        line_w = bbox[2] - bbox[0]
+        draw.text((center_x - line_w/2, y + i * (font.size + 8)), line, font=font, fill=fill)
 
-# ---------- GENERATE TTS ----------
-async def tts_generate(text, voice, out_file):
-    communicate = edge_tts.Communicate(text, voice)
-    await communicate.save(out_file)
+# ---------- CLIP GENERATORS ----------
+def animated_text(*args, duration=None):
+    W, H = VIDEO_SIZE
+    rect_y = H - 215
+    center_x = W // 2
 
-async def generate_all_audio(dialogs):
-    audio_files = []
-    for i, dialog in enumerate(dialogs):
-        speaker = dialog[0]
-        voice = selected_male_voice if speaker=="M" else selected_female_voice
-        out = f"{OUTPUT_DIR}/audio_{i}.mp3"
-        text_to_read = dialog[1] if selected_language!="Chinese" else dialog[1]  # chỉ đọc Hán tự
-        await tts_generate(text_to_read, voice, out)
-        audio_files.append(out)
-    return audio_files
-
-#---------- WAVEFORM CLIP ----------#
-def make_waveform_clip(audio_path, duration, size=(400, 100)):
-    audio = AudioFileClip(audio_path)
-    # Lấy mẫu âm thanh (20 khung hình mỗi giây để mượt mà)
-    fps = 20
-    n_frames = int(duration * fps)
-    
-    # Hàm vẽ từng frame waveform
     def make_frame(t):
-        w, h = size
-        img = Image.new("RGBA", size, (0, 0, 0, 0))
+        # 1. Tạo ảnh RGBA hoàn toàn trong suốt
+        img = Image.new("RGBA", (W, H), (0,0,0,0))
         draw = ImageDraw.Draw(img)
         
-        # Lấy biên độ tại thời điểm t
-        # audio.get_frame(t) trả về mảng [trái, phải], ta lấy trung bình
-        try:
-            sample = audio.get_frame(t)
-            amplitude = np.mean(np.abs(sample)) 
-        except:
-            amplitude = 0
-            
-        # Vẽ 24 thanh waveform đơn giản
-        num_bars = 24
-        bar_width = w // num_bars - 4
-        for i in range(num_bars):
-            # Tạo hiệu ứng ngẫu nhiên nhẹ dựa trên biên độ để trông "nhảy" hơn
-            bar_h = min(h, amplitude * h * 2.5 + np.random.randint(5, 15))
-            x0 = i * (bar_width + 4)
-            y0 = (h - bar_h) / 2
-            x1 = x0 + bar_width
-            y1 = y0 + bar_h
-            draw.rectangle([x0, y0, x1, y1], fill=(255, 255, 255, 200)) # Màu trắng đục
-            
+        # 2. Vẽ khung nền phụ đề (Opaque trắng)
+        draw.rectangle([(0, rect_y), (W, rect_y + 155)], fill=(255, 255, 255, 255))
+        
+        if selected_language == "Chinese":
+            f_h = ImageFont.truetype(FONT_HANZI_PATH, 50)
+            f_p = ImageFont.truetype(FONT_PINYIN_PATH, 30)
+            f_e = ImageFont.truetype(FONT_LATIN_PATH, 30)
+            draw_center_text(draw, args[0], f_h, center_x, rect_y + 15, W-160)
+            draw_center_text(draw, args[1], f_p, center_x, rect_y + 75, W-160)
+            draw_center_text(draw, args[2], f_e, center_x, rect_y + 115, W-160)
+        else:
+            font = ImageFont.truetype(FONT_LATIN_PATH, 35)
+            draw_center_text(draw, args[0], font, center_x, rect_y + 40, W-160)
+            draw_center_text(draw, args[1], font, center_x, rect_y + 95, W-160)
+        
+        # CHỐT: MoviePy cần RGB cho frame và Alpha riêng cho mask
         return np.array(img.convert("RGB"))
 
-    return VideoClip(make_frame, duration=duration).set_opacity(0.8)
+    def make_mask(t):
+        # Tạo mask từ kênh Alpha (0-255 -> 0.0-1.0)
+        img = Image.new("RGBA", (W, H), (0,0,0,0))
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([(0, rect_y), (W, rect_y + 155)], fill=(255, 255, 255, 255))
+        # Mask phải là grayscale (L) 
+        return np.array(img.convert("L")) / 255.0
 
-# ---------- BUILD VIDEO ----------
+    return VideoClip(make_frame, duration=duration).set_mask(VideoClip(make_mask, ismask=True, duration=duration))
+
+def make_waveform_clip(audio_path, duration):
+    audio = AudioFileClip(audio_path)
+    W_w, H_w = 400, 100
+    
+    def make_frame(t):
+        # Tạo nền đen hoàn toàn
+        img = Image.new("RGB", (W_w, H_w), (0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        try:
+            # Lấy biên độ âm thanh
+            sample = audio.get_frame(t)
+            amplitude = np.mean(np.abs(sample))
+        except: 
+            amplitude = 0
+            
+        for i in range(25):
+            # Tính toán chiều cao thanh dựa trên amplitude
+            h = min(H_w, amplitude * 250 + np.random.randint(5, 15))
+            x = (W_w - 25 * 8) // 2 + i * 8  # Center the bars
+            # Vẽ thanh màu trắng (255, 255, 255)
+            draw.rectangle([x, (H_w-h)/2, x+5, (H_w+h)/2], fill=(255, 255, 255))
+        return np.array(img)
+
+    def make_mask(t):
+        # Lấy chính frame đó để làm mask
+        frame = make_frame(t)
+        # Chuyển về grayscale (L): Màu trắng (thanh waveform) sẽ thành 255, đen (nền) thành 0
+        mask_img = Image.fromarray(frame).convert("L")
+        # Chuẩn hóa về dải 0.0 - 1.0 (0.0 là trong suốt, 1.0 là hiện rõ)
+        return np.array(mask_img) / 255.0
+
+    wave = VideoClip(make_frame, duration=duration)
+    return wave.set_mask(VideoClip(make_mask, ismask=True, duration=duration))
+
+# ---------- MAIN BUILDER ----------
 def build_video(dialogs, audio_files):
-    clips = []
+    video_clips = []
     audio_clips = []
-    current_time = 0
+    timeline = 0
 
-    for i, dialog in enumerate(dialogs):
-        # Nạp audio trước để lấy duration chính xác
-        audio = AudioFileClip(audio_files[i])
-        dur = audio.duration
-        
-        speaker = dialog[0]
-        if selected_language == "Chinese":
-            txt_clip = animated_text(dialog[1], dialog[2], dialog[3], duration=dur, speaker=speaker).set_start(current_time)
-        else:
-            txt_clip = animated_text(dialog[1], dialog[2], duration=dur, speaker=speaker).set_start(current_time)
+    # Tính tổng duration chính xác
+    total_duration = 0
+    loaded_audios = []
+    for f in audio_files:
+        a = AudioFileClip(f)
+        loaded_audios.append(a)
+        total_duration += a.duration
 
-
-        # 2. Tạo Waveform Clip ở giữa màn hình
-        wave_clip = make_waveform_clip(audio_files[i], dur, size=(300, 80))
-        wave_clip = wave_clip.set_start(current_time).set_position(('center', 410)) # 430 là tọa độ Y (ở giữa-trên)
-
-        clips.append(txt_clip)
-        clips.append(wave_clip) # Thêm waveform vào danh sách clip
-        audio_clips.append(audio.set_start(current_time))
-        current_time += dur
-
-    # Tạo Audio tổng hợp
-    final_audio = CompositeAudioClip(audio_clips)
-    
-    # Render audio ra một file tạm hoặc xử lý để tránh lỗi to_soundarray
-    # (MoviePy đôi khi lỗi khi lấy soundarray trực tiếp từ CompositeAudioClip)
-    
-    # 1. Background
+    # Xử lý Background
     if selected_bg:
         if selected_bg.lower().endswith(".mp4"):
-            bg = VideoFileClip(selected_bg).resize(VIDEO_SIZE).loop(duration=current_time)
+            bg = VideoFileClip(selected_bg).resize(VIDEO_SIZE).loop(duration=total_duration)
         else:
-            bg = ImageClip(selected_bg).set_duration(current_time).resize(VIDEO_SIZE)
+            bg = ImageClip(selected_bg).set_duration(total_duration).resize(VIDEO_SIZE)
     else:
-        bg = ColorClip(size=VIDEO_SIZE, color=(20, 20, 20), duration=current_time)
+        bg = ColorClip(size=VIDEO_SIZE, color=(30, 30, 30), duration=total_duration)
 
-    # 2. Kết hợp theo thứ tự lớp: Background -> Subtitles
-    all_video_layers = [bg] + clips
+    for i, dialog in enumerate(dialogs):
+        dur = loaded_audios[i].duration
+        
+        # Subtitle
+        if selected_language == "Chinese":
+            txt = animated_text(dialog[1], dialog[2], dialog[3], duration=dur).set_start(timeline)
+        else:
+            txt = animated_text(dialog[1], dialog[2], duration=dur).set_start(timeline)
+        
+        # Waveform
+        wave = make_waveform_clip(audio_files[i], dur).set_start(timeline).set_position(('center', 410))
+
+        video_clips.append(txt)
+        video_clips.append(wave)
+        audio_clips.append(loaded_audios[i].set_start(timeline))
+        timeline += dur
+
+    final_audio = CompositeAudioClip(audio_clips)
+    final_video = CompositeVideoClip([bg] + video_clips, size=VIDEO_SIZE).set_audio(final_audio)
     
-    final_video = CompositeVideoClip(all_video_layers, size=VIDEO_SIZE)
-    final_video = final_video.set_audio(final_audio).set_duration(current_time)
-
     out_path = os.path.join(OUTPUT_DIR, "final_podcast.mp4")
-    final_video.write_videofile(out_path, fps=24, codec="libx264", audio_codec="aac")
+    final_video.write_videofile(out_path, fps=24, codec="libx264", audio_codec="aac", temp_audiofile='temp-audio.m4a', remove_temp=True)
     
+    # Clean up
+    for a in loaded_audios: a.close()
     return out_path
-
-
-# ---------- GUI ----------
-root = tk.Tk()
-root.title("Multi-language Podcast Generator")
-
-# Language Selection
-lang_frame = tk.Frame(root)
-lang_frame.pack(pady=5)
-tk.Label(lang_frame, text="Select Language:").pack(side="left", padx=5)
-lang_var = tk.StringVar(value="Vietnamese")
-for lang in ["Vietnamese","Spanish","Chinese"]:
-    tk.Radiobutton(lang_frame, text=lang, variable=lang_var, value=lang).pack(side="left", padx=5)
-
-# Voice Selection
-voice_frame = tk.Frame(root)
-voice_frame.pack(pady=5)
-tk.Label(voice_frame, text="Male voice:").grid(row=0, column=0)
-tk.Label(voice_frame, text="Female voice:").grid(row=0, column=2)
-male_var = tk.StringVar(value="Male")
-female_var = tk.StringVar(value="Female")
-male_menu = tk.OptionMenu(voice_frame, male_var, "Male")
-female_menu = tk.OptionMenu(voice_frame, female_var, "Female")
-male_menu.grid(row=0, column=1, padx=5)
-female_menu.grid(row=0, column=3, padx=5)
-
-# Background Selection
-bg_frame = tk.Frame(root)
-bg_frame.pack(pady=5)
-bg_btn = tk.Button(bg_frame, text="Choose Background", command=lambda: choose_background())
-bg_btn.pack(side="left")
-bg_label = tk.Label(bg_frame, text="No background selected")
-bg_label.pack(side="left", padx=10)
-
-# Text Input
-text_box = tk.Text(root, width=100, height=20)
-text_box.pack(pady=5)
 
 # ---------- GUI FUNCTIONS ----------
 def choose_background():
     global selected_bg
-    path = filedialog.askopenfilename(title="Choose background", filetypes=[("Image/Video","*.jpg *.png *.mp4")])
+    path = filedialog.askopenfilename(filetypes=[("Media","*.jpg *.png *.mp4")])
     if path:
         selected_bg = path
         bg_label.config(text=os.path.basename(path))
 
+async def generate_all_audio(dialogs):
+    files = []
+    for i, d in enumerate(dialogs):
+        voice = selected_male_voice if d[0] == "M" else selected_female_voice
+        path = f"{OUTPUT_DIR}/audio_{i}.mp3"
+        await edge_tts.Communicate(d[1], voice).save(path)
+        files.append(path)
+    return files
+
 def generate():
-    global selected_male_voice, selected_female_voice, selected_language
+    global selected_language, selected_male_voice, selected_female_voice
     selected_language = lang_var.get()
-    voices = LANG_VOICES[selected_language]
-    selected_male_voice = voices["male"]
-    selected_female_voice = voices["female"]
-
+    selected_male_voice = LANG_VOICES[selected_language]["male"]
+    selected_female_voice = LANG_VOICES[selected_language]["female"]
+    
     text = text_box.get("1.0", tk.END).strip()
-    if not text:
-        messagebox.showerror("Error", "Input is empty")
-        return
-
     dialogs = parse_input(text)
-    if not dialogs:
-        messagebox.showerror("Error", "Wrong format")
-        return
+    if not dialogs: return messagebox.showerror("Lỗi", "Vui lòng nhập đúng định dạng: Speaker|Text|Text")
 
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         audio_files = loop.run_until_complete(generate_all_audio(dialogs))
         out = build_video(dialogs, audio_files)
-        messagebox.showinfo("Done", f"Video generated:\n{out}")
+        messagebox.showinfo("Thành công", f"Video đã lưu tại: {out}")
     except Exception as e:
-        messagebox.showerror("Error", str(e))
+        messagebox.showerror("Lỗi Render", str(e))
 
-# Generate Button
-gen_btn = tk.Button(root, text="Generate Video", command=generate)
-gen_btn.pack(pady=10)
-
+# ---------- GUI LAYOUT ----------
+root = tk.Tk()
+root.title("AI Podcast Generator Fix")
+lang_var = tk.StringVar(value="Vietnamese")
+tk.OptionMenu(root, lang_var, "Vietnamese", "Spanish", "Chinese").pack()
+tk.Button(root, text="Chọn Hình Nền", command=choose_background).pack()
+bg_label = tk.Label(root, text="Chưa chọn nền")
+bg_label.pack()
+text_box = tk.Text(root, width=80, height=15)
+text_box.pack()
+tk.Button(root, text="BẮT ĐẦU TẠO VIDEO", command=generate, bg="blue", fg="white").pack(pady=10)
 root.mainloop()
