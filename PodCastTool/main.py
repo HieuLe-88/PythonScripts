@@ -69,10 +69,20 @@ async def generate_assets(dialogs, lang, rate_str):
         end_t = format_srt_time(timeline + dur)
         
         # Nếu tiếng Trung: Ghép Hán tự | Pinyin | Nghĩa vào sub
+        main_text = d[1]
+        font_size = calc_font_size(main_text)
+
         if lang == "Chinese":
-            sub_text = f"{d[1]}\\N{d[2]}\\N{d[3]}" # \\N là xuống dòng trong FFmpeg sub
+            sub_text = (
+                f"{{\\fs{font_size}}}{d[1]}"
+                f"\\N{{\\fs{font_size-2}}}{d[2]}"
+                f"\\N{{\\fs{font_size-4}}}{d[3]}"
+            )
         else:
-            sub_text = f"{d[1]}\\N{d[2]}"
+            sub_text = (
+                f"{{\\fs{font_size}}}{d[1]}"
+                f"\\N{{\\fs{font_size-2}}}{d[2]}"
+            )
             
         srt_content += f"{i+1}\n{start_t} --> {end_t}\n{sub_text}\n\n"
         
@@ -86,6 +96,17 @@ async def generate_assets(dialogs, lang, rate_str):
         
     return audio_files, timeline
 
+def calc_font_size(text):
+    length = len(text)
+    if length <= 40:
+        return 17
+    elif length <= 60:
+        return 15
+    elif length <= 80:
+        return 13
+    else:
+        return 12
+    
 def build_video_ffmpeg(audio_files, total_dur, lang):
     # 1. Tạo file list để gộp audio
     list_path = os.path.join(OUTPUT_DIR, "audio_list.txt")
@@ -101,9 +122,9 @@ def build_video_ffmpeg(audio_files, total_dur, lang):
     current_font = FONT_CHINESE if lang == "Chinese" else FONT_LATIN
     
     # Force_style: Nền xám trong suốt (BorderStyle=3, OutlineColour=&H99666666)
-    sub_style = (f"subtitles='{srt_path}':force_style='Fontname={current_font},FontSize=22,"
+    sub_style = (f"subtitles='{srt_path}':force_style='Fontname={current_font},FontSize=16,"
                  f"PrimaryColour=&HFFFFFF,BorderStyle=3,OutlineColour=&H99333333,"
-                 f"Alignment=2,MarginV=60'")
+                 f"Alignment=2,MarginV=40'")
 
     # 3. Lệnh FFmpeg tổng hợp
     out_video = os.path.join(OUTPUT_DIR, "final_podcast.mp4")
@@ -126,9 +147,9 @@ def build_video_ffmpeg(audio_files, total_dur, lang):
         # Bước 2: Tạo Waveform trắng (showwaves)
         f"[1:a]showwaves=s=800x200:mode=line:colors=white:draw=full[wave];"
         # Bước 3: Chồng waveform lên nền tại vị trí 650
-        f"[bg][wave]overlay=(W-w)/2:650[v_wave];"
+        f"[bg][wave]overlay=(W-w)/2:600[v_wave];"
         # Bước 4: Chèn Subtitle
-        f"[v_wave]{sub_style}[v]",
+        f"[v_wave]{sub_style},fps=12[v]",
         "-map", "[v]",
         "-map", "1:a",
         "-c:v", "libx264",
@@ -140,7 +161,23 @@ def build_video_ffmpeg(audio_files, total_dur, lang):
     ]
     
     subprocess.run(cmd, check=True)
-    return out_video
+
+    # Cleanup
+    try:
+        for audio in audio_files:
+            if os.path.exists(audio):
+                os.remove(audio)
+
+        if os.path.exists(full_audio):
+            os.remove(full_audio)
+
+        if os.path.exists(list_path):
+            os.remove(list_path)
+
+    except Exception as e:
+        print("Cleanup warning:", e)
+
+    return out_video    
 
 # ---------- GUI FUNCTIONS ----------
 def choose_background():
@@ -192,6 +229,6 @@ text_box = tk.Text(root, width=80, height=15)
 text_box.pack(pady=10)
 text_box.insert("1.0", "M|Xin chào các bạn|Chào mừng đến với Podcast\nF|Chào anh Nam|Rất vui được gặp anh")
 
-tk.Button(root, text="BẮT ĐẦU RENDER SIÊU TỐC", command=generate, bg="green", fg="white", font=('Arial', 10, 'bold')).pack(pady=10)
+tk.Button(root, text="BẮT ĐẦU RENDER", command=generate, bg="green", fg="white", font=('Arial', 10, 'bold')).pack(pady=10)
 
 root.mainloop()
