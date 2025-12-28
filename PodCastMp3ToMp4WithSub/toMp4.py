@@ -139,9 +139,9 @@ class PodcastVideoAllInOne:
 
     def run_ffmpeg(self):
         base_name = os.path.splitext(os.path.basename(self.audio_path.get()))[0]
-        out_file = os.path.join(self.output_dir.get(), base_name + "_video.mp4")
+        out_file = os.path.join(self.output_dir.get(), base_name + "_podcast_center.mp4")
         
-        # Xử lý đường dẫn SRT cho FFmpeg (tránh lỗi font/path trên Windows)
+        # Xử lý đường dẫn SRT cho FFmpeg
         srt_fixed = os.path.abspath(self.srt_path.get()).replace("\\", "/").replace(":", "\\:")
         
         try:
@@ -149,21 +149,18 @@ class PodcastVideoAllInOne:
             dur_cmd = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', self.audio_path.get()]
             total_dur = float(subprocess.check_output(dur_cmd).strip())
             
-            # 2. Lệnh FFmpeg với Waveform
-            # Giải thích filter_complex:
-            # - [1:a] tạo sóng kích thước 1280x250, màu trắng, dạng line.
-            # - [0:v] lấy hình nền, scale về chuẩn HD 1280x720.
-            # - overlay đặt sóng tại tọa độ x=0, y=400 (nửa dưới video).
-            # - subtitles vẽ chữ lên trên cùng.
+            # 2. Lệnh FFmpeg đã điều chỉnh:
+            # - colors=white: Sóng màu trắng
+            # - overlay=0:235: Đưa sóng lên giữa màn hình (720-250)/2 = 235
             
             cmd = [
                 'ffmpeg', '-y',
-                '-loop', '1', '-i', self.bg_path.get(), # Input 0: Hình nền
-                '-i', self.audio_path.get(),           # Input 1: Audio
+                '-loop', '1', '-i', self.bg_path.get(), 
+                '-i', self.audio_path.get(),
                 '-filter_complex', 
                 "[1:a]showwaves=s=1280x250:mode=line:colors=white:rate=25[wave]; " +
                 "[0:v]scale=1280:720,format=yuv420p[bg]; " +
-                f"[bg][wave]overlay=0:400:shortest=1,subtitles='{srt_fixed}':force_style='FontSize=24,Alignment=2,MarginV=30'[v]",
+                f"[bg][wave]overlay=0:235:shortest=1,subtitles='{srt_fixed}':force_style='FontSize=24,Alignment=2,MarginV=30'[v]",
                 '-map', '[v]', 
                 '-map', '1:a',
                 '-c:v', 'libx264', '-preset', 'ultrafast', 
@@ -175,20 +172,17 @@ class PodcastVideoAllInOne:
             process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, encoding='utf-8')
             
             for line in process.stdout:
-                # Tìm kiếm pattern 'time=00:00:05.12' để cập nhật progress
                 time_match = re.search(r"time=(\d{2}:\d{2}:\d{2})", line)
                 if time_match:
                     h, m, s = map(int, time_match.group(1).split(':'))
                     percent = ((h * 3600 + m * 60 + s) / total_dur) * 100
-                    if percent > 100: percent = 100
-                    
-                    self.video_progress["value"] = percent
-                    self.video_status.config(text=f"Đang render (có sóng âm): {int(percent)}%")
+                    self.video_progress["value"] = min(percent, 100)
+                    self.video_status.config(text=f"Đang render (giữa màn hình): {int(self.video_progress['value'])}%")
                     self.root.update_idletasks()
             
             process.wait()
             self.video_progress["value"] = 100
-            messagebox.showinfo("Xong!", f"Video có waveform đã sẵn sàng!\n{out_file}")
+            messagebox.showinfo("Xong!", f"Video đã sẵn sàng!\n{out_file}")
             os.startfile(self.output_dir.get())
             
         except Exception as e:
