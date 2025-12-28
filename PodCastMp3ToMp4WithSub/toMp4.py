@@ -10,12 +10,13 @@ class PodcastVideoAllInOne:
     def __init__(self, root):
         self.root = root
         self.root.title("SpanishCorner - Podcast Video Creator Pro")
-        self.root.geometry("650x580")
+        self.root.geometry("650x620") # Tăng chiều cao một chút
 
         self.audio_path = tk.StringVar()
         self.srt_path = tk.StringVar()
         self.bg_path = tk.StringVar()
         self.output_dir = tk.StringVar()
+        self.has_sub = tk.BooleanVar(value=True) # Mặc định là có sub
 
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(expand=True, fill="both", padx=10, pady=10)
@@ -51,8 +52,19 @@ class PodcastVideoAllInOne:
 
         tk.Label(tab2, text="GHÉP PHỤ ĐỀ VÀO VIDEO TĨNH", font=("Arial", 12, "bold")).pack(pady=15)
         self.create_input_row(tab2, "Audio (MP3):", self.audio_path, self.browse_audio)
-        self.create_input_row(tab2, "Subtitle (SRT):", self.srt_path, lambda: self.srt_path.set(filedialog.askopenfilename()))
         self.create_input_row(tab2, "Hình nền (IMG):", self.bg_path, lambda: self.bg_path.set(filedialog.askopenfilename()))
+        
+        # Thêm lựa chọn có sub hay không
+        sub_frame = tk.Frame(tab2)
+        sub_frame.pack(fill="x", padx=30, pady=5)
+        tk.Checkbutton(sub_frame, text="Chèn phụ đề vào video", variable=self.has_sub, 
+                       command=self.toggle_srt_input).pack(side="left")
+        
+        self.srt_row = tk.Frame(tab2) # Giữ row này để ẩn/hiện nếu cần
+        self.srt_row.pack(fill="x", padx=30, pady=5)
+        tk.Label(self.srt_row, text="Subtitle (SRT):", width=15, anchor="w").pack(side="left")
+        tk.Entry(self.srt_row, textvariable=self.srt_path).pack(side="left", fill="x", expand=True, padx=5)
+        tk.Button(self.srt_row, text="Duyệt", command=lambda: self.srt_path.set(filedialog.askopenfilename())).pack(side="right")
 
         tk.Label(tab2, text="Tiến độ Render Video:").pack(pady=(10, 0))
         self.video_progress = ttk.Progressbar(tab2, orient="horizontal", length=400, mode="determinate")
@@ -63,6 +75,14 @@ class PodcastVideoAllInOne:
         self.btn_render.pack(pady=20)
         self.video_status = tk.Label(tab2, text="Đang chờ dữ liệu...", fg="blue")
         self.video_status.pack()
+
+    def toggle_srt_input(self):
+        """Ẩn hoặc hiện ô nhập SRT tùy vào checkbox"""
+        if self.has_sub.get():
+            self.srt_row.pack(fill="x", padx=30, pady=5, after=self.btn_render) # Đẩy lại vị trí cũ
+            # (Thực tế đơn giản nhất là cứ để hiện, chỉ xử lý logic lúc bấm nút Render)
+        else:
+            pass 
 
     def create_input_row(self, parent, text, var, cmd):
         frame = tk.Frame(parent)
@@ -87,7 +107,6 @@ class PodcastVideoAllInOne:
         ms = int((td - int(td)) * 1000)
         return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
-    # --- LOGIC TAB 1: CHỈ TẠO SRT ---
     def start_sub_thread(self):
         if not self.audio_path.get() or not self.output_dir.get():
             return messagebox.showwarning("Lỗi", "Vui lòng chọn Audio và Thư mục lưu!")
@@ -100,7 +119,6 @@ class PodcastVideoAllInOne:
             self.sub_status.config(text="Đang tải Model AI...", fg="blue")
             model = whisper.load_model(self.model_var.get())
             
-            # Lấy tổng thời gian để tính %
             dur_cmd = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', self.audio_path.get()]
             total_duration = float(subprocess.check_output(dur_cmd).strip())
 
@@ -113,54 +131,64 @@ class PodcastVideoAllInOne:
             with open(srt_full_path, "w", encoding="utf-8") as f:
                 for i, seg in enumerate(result['segments'], start=1):
                     f.write(f"{i}\n{self.format_time(seg['start'])} --> {self.format_time(seg['end'])}\n{seg['text'].strip()}\n\n")
-                    # Cập nhật progress bar
                     prog = (seg['end'] / total_duration) * 100
                     self.sub_progress["value"] = prog
                     self.root.update_idletasks()
 
             self.sub_progress["value"] = 100
-            self.srt_path.set(srt_full_path) # Tự động điền sang tab video
+            self.srt_path.set(srt_full_path)
             self.sub_status.config(text="Đã hoàn thành file SRT!", fg="green")
             messagebox.showinfo("Thành công", f"Đã lưu phụ đề tại:\n{srt_full_path}")
-            os.startfile(self.output_dir.get()) 
             
         except Exception as e:
             messagebox.showerror("Lỗi AI", str(e))
         finally:
             self.btn_sub.config(state="normal")
 
-    # --- LOGIC TAB 2: RENDER VIDEO ---
     def start_render_thread(self):
-        if not all([self.audio_path.get(), self.srt_path.get(), self.bg_path.get()]):
-            return messagebox.showwarning("Lỗi", "Thiếu dữ liệu để render!")
+        # Kiểm tra điều kiện: Nếu chọn có sub thì phải có file srt_path
+        if self.has_sub.get() and not self.srt_path.get():
+             return messagebox.showwarning("Lỗi", "Vui lòng chọn hoặc tạo file phụ đề trước!")
+        
+        if not self.audio_path.get() or not self.bg_path.get():
+            return messagebox.showwarning("Lỗi", "Thiếu Audio hoặc Hình nền!")
+
         self.btn_render.config(state="disabled")
         self.video_progress["value"] = 0
         threading.Thread(target=self.run_ffmpeg, daemon=True).start()
 
     def run_ffmpeg(self):
         base_name = os.path.splitext(os.path.basename(self.audio_path.get()))[0]
-        out_file = os.path.join(self.output_dir.get(), base_name + "_spectrum.mp4")
-        
-        # Xử lý đường dẫn SRT cho FFmpeg
-        srt_fixed = os.path.abspath(self.srt_path.get()).replace("\\", "/").replace(":", "\\:")
+        out_file = os.path.join(self.output_dir.get(), base_name + "_final.mp4")
         
         try:
             # 1. Lấy tổng thời lượng
             dur_cmd = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', self.audio_path.get()]
             total_dur = float(subprocess.check_output(dur_cmd).strip())
             
-            # 2. Cấu hình Filter Complex cho Dạng Cột Nhảy:
-            # - showfreqs: s=320x200 (1/4 chiều rộng), mode=bar (dạng cột), colors=white
-            # - overlay: x=480 (giữa ngang), y=260 (giữa dọc)
+            # 2. Xây dựng Filter
+            # Xử lý Background: Scale lấp đầy và Crop phần thừa
+            bg_filter = "[0:v]scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,format=yuv420p[bg]; "
             
+            # Phần sóng nhạc (wave)
+            wave_filter = "[1:a]showfreqs=s=320x200:mode=bar:colors=white:fscale=log:ascale=sqrt[wave]; "
+            
+            filter_str = bg_filter + wave_filter
+            
+            if self.has_sub.get():
+                # Có sub: overlay wave xong rồi mới chạy filter subtitles
+                # Lưu ý: Cần xử lý đường dẫn SRT cho FFmpeg (đổi \ thành / và thoát dấu :)
+                srt_fixed = os.path.abspath(self.srt_path.get()).replace("\\", "/").replace(":", "\\:")
+                filter_str += f"[bg][wave]overlay=480:260:shortest=1,subtitles='{srt_fixed}':force_style='FontSize=24,Alignment=2,MarginV=30'[v]"
+            else:
+                # Không sub: chỉ overlay wave lên bg
+                filter_str += "[bg][wave]overlay=480:260:shortest=1[v]"
+
             cmd = [
                 'ffmpeg', '-y',
                 '-loop', '1', '-i', self.bg_path.get(), 
                 '-i', self.audio_path.get(),
-                '-filter_complex', 
-                "[1:a]showfreqs=s=320x200:mode=bar:colors=white:fscale=log:ascale=sqrt[wave]; " +
-                "[0:v]scale=1280:720,format=yuv420p[bg]; " +
-                f"[bg][wave]overlay=480:260:shortest=1,subtitles='{srt_fixed}':force_style='FontSize=24,Alignment=2,MarginV=30'[v]",
+                '-filter_complex', filter_str,
                 '-map', '[v]', 
                 '-map', '1:a',
                 '-c:v', 'libx264', '-preset', 'ultrafast', 
@@ -177,12 +205,12 @@ class PodcastVideoAllInOne:
                     h, m, s = map(int, time_match.group(1).split(':'))
                     percent = ((h * 3600 + m * 60 + s) / total_dur) * 100
                     self.video_progress["value"] = min(percent, 100)
-                    self.video_status.config(text=f"Rendering (Cột nhảy): {int(self.video_progress['value'])}%")
+                    self.video_status.config(text=f"Rendering: {int(self.video_progress['value'])}%")
                     self.root.update_idletasks()
             
             process.wait()
             self.video_progress["value"] = 100
-            messagebox.showinfo("Xong!", f"Video Dạng Cột đã sẵn sàng!\n{out_file}")
+            messagebox.showinfo("Xong!", f"Video đã sẵn sàng!\n{out_file}")
             os.startfile(self.output_dir.get())
             
         except Exception as e:
