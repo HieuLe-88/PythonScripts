@@ -139,7 +139,7 @@ class PodcastVideoAllInOne:
 
     def run_ffmpeg(self):
         base_name = os.path.splitext(os.path.basename(self.audio_path.get()))[0]
-        out_file = os.path.join(self.output_dir.get(), base_name + "_short_wave.mp4")
+        out_file = os.path.join(self.output_dir.get(), base_name + "_spectrum.mp4")
         
         # Xử lý đường dẫn SRT cho FFmpeg
         srt_fixed = os.path.abspath(self.srt_path.get()).replace("\\", "/").replace(":", "\\:")
@@ -149,19 +149,18 @@ class PodcastVideoAllInOne:
             dur_cmd = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', self.audio_path.get()]
             total_dur = float(subprocess.check_output(dur_cmd).strip())
             
-            # 2. Tính toán thông số:
-            # Chiều rộng wave = 1280 / 4 = 320
-            # Vị trí X để nằm giữa = (1280 - 320) / 2 = 480
-            # Vị trí Y để nằm giữa = (720 - 250) / 2 = 235
+            # 2. Cấu hình Filter Complex cho Dạng Cột Nhảy:
+            # - showfreqs: s=320x200 (1/4 chiều rộng), mode=bar (dạng cột), colors=white
+            # - overlay: x=480 (giữa ngang), y=260 (giữa dọc)
             
             cmd = [
                 'ffmpeg', '-y',
                 '-loop', '1', '-i', self.bg_path.get(), 
                 '-i', self.audio_path.get(),
                 '-filter_complex', 
-                "[1:a]showwaves=s=320x250:mode=line:colors=white:rate=25[wave]; " +
+                "[1:a]showfreqs=s=320x200:mode=bar:colors=white:fscale=log:ascale=sqrt[wave]; " +
                 "[0:v]scale=1280:720,format=yuv420p[bg]; " +
-                f"[bg][wave]overlay=480:235:shortest=1,subtitles='{srt_fixed}':force_style='FontSize=24,Alignment=2,MarginV=30'[v]",
+                f"[bg][wave]overlay=480:260:shortest=1,subtitles='{srt_fixed}':force_style='FontSize=24,Alignment=2,MarginV=30'[v]",
                 '-map', '[v]', 
                 '-map', '1:a',
                 '-c:v', 'libx264', '-preset', 'ultrafast', 
@@ -178,12 +177,12 @@ class PodcastVideoAllInOne:
                     h, m, s = map(int, time_match.group(1).split(':'))
                     percent = ((h * 3600 + m * 60 + s) / total_dur) * 100
                     self.video_progress["value"] = min(percent, 100)
-                    self.video_status.config(text=f"Rendering (Short Wave): {int(self.video_progress['value'])}%")
+                    self.video_status.config(text=f"Rendering (Cột nhảy): {int(self.video_progress['value'])}%")
                     self.root.update_idletasks()
             
             process.wait()
             self.video_progress["value"] = 100
-            messagebox.showinfo("Xong!", f"Video với waveform ngắn đã sẵn sàng!\n{out_file}")
+            messagebox.showinfo("Xong!", f"Video Dạng Cột đã sẵn sàng!\n{out_file}")
             os.startfile(self.output_dir.get())
             
         except Exception as e:
