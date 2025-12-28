@@ -1,0 +1,8 @@
+1
+00:00:00,000 --> 00:00:16,500
+TTSMaker es una herramienta gratuita de síntesis de voz que ofrece servicios de síntesis de voz y es compatible con varios idiomas, como inglés, francés, alemán, español, árabe chino, japonés, coreano, vietnamita, etcétera así como con varios estilos de voz.
+
+2
+00:00:16,500 --> 00:00:25,000
+Puede usarla para leer textos y libros electrónicos en voz alta, o descargar archivos de audio para uso comercial, es completamente gratis.
+

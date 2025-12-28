@@ -31,8 +31,9 @@ LANG_VOICES = {
     },
     "Spanish": {
         "Alvaro & Elvira (Tây Ban Nha)": {"male": "es-ES-AlvaroNeural", "female": "es-ES-ElviraNeural"},
-        "Arnau & Estrella (Tây Ban Nha)": {"male": "es-ES-ArnauNeural", "female": "es-ES-EstrellaNeural"},
+        "Tomas & Elena (Argentina)": {"male": "es-AR-TomasNeural", "female": "es-AR-ElenaNeural"},
         "Jorge & Dalia (Mexico)": {"male": "es-MX-JorgeNeural", "female": "es-MX-DaliaNeural"},
+        "Lorenzo & Paloma (Colombia-US)": {"male": "es-CL-LorenzoNeural", "female": "es-US-PalomaNeural"},
     }
 }
 
