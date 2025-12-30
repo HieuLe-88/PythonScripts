@@ -1,12 +1,340 @@
 1
-00:00:00,000 --> 00:00:05,256
-{\fs15}Yo también, la gastronomía es fundamental.\N{\fs13}Me too, gastronomy is essential.
+00:00:00,000 --> 00:00:03,431
+{\fs17}Hola, ¿cómo estás hoy?\N{\fs15}Hi, how are you today?
 
 2
-00:00:05,256 --> 00:00:10,007
-{\fs15}Entonces hagamos un itinerario detallado.\N{\fs13}Then let's make a detailed itinerary.
+00:00:03,431 --> 00:00:07,896
+{\fs17}Me siento muy bien y con mucha energía.\N{\fs15}I feel very good and with a lot of energy.
 
 3
-00:00:10,007 --> 00:00:14,615
-{\fs17}De acuerdo, estoy muy emocionada.\N{\fs15}Alright, I'm very excited.
+00:00:07,896 --> 00:00:14,208
+{\fs15}¡Qué bueno! Yo estoy un poco cansada todavía.\N{\fs13}That's good! I am still a little tired.
+
+4
+00:00:14,208 --> 00:00:18,096
+{\fs17}¿A qué hora te has despertado hoy?\N{\fs15}What time did you wake up today?
+
+5
+00:00:18,096 --> 00:00:22,224
+{\fs17}Me desperté a las seis de la mañana.\N{\fs15}I woke up at six in the morning.
+
+6
+00:00:22,224 --> 00:00:27,432
+{\fs15}Siempre me levanto temprano para hacer ejercicio.\N{\fs13}I always get up early to exercise.
+
+7
+00:00:27,432 --> 00:00:31,824
+{\fs17}Hoy corrí por el parque cerca de casa.\N{\fs15}Today I ran through the park near home.
+
+8
+00:00:31,824 --> 00:00:38,352
+{\fs15}¡Increíble! Yo prefiero dormir un poco más.\N{\fs13}Incredible! I prefer to sleep a little more.
+
+9
+00:00:38,352 --> 00:00:42,672
+{\fs17}Mi alarma sonó a las siete y media.\N{\fs15}My alarm went off at seven-thirty.
+
+10
+00:00:42,672 --> 00:00:47,568
+{\fs15}Luego necesité diez minutos más en la cama.\N{\fs13}Then I needed ten more minutes in bed.
+
+11
+00:00:47,568 --> 00:00:51,312
+{\fs17}¿Qué desayunaste esta mañana?\N{\fs15}What did you have for breakfast this morning?
+
+12
+00:00:51,312 --> 00:00:56,208
+{\fs17}Solo tomé un café negro y tostadas.\N{\fs15}I only had a black coffee and toast.
+
+13
+00:00:56,208 --> 00:01:00,552
+{\fs17}No tengo mucha hambre por las mañanas.\N{\fs15}I am not very hungry in the mornings.
+
+14
+00:01:00,552 --> 00:01:04,992
+{\fs17}Yo necesito un desayuno muy fuerte.\N{\fs15}I need a very strong breakfast.
+
+15
+00:01:04,992 --> 00:01:09,888
+{\fs17}Comí huevos, fruta y un yogur natural.\N{\fs15}I ate eggs, fruit, and a natural yogurt.
+
+16
+00:01:09,888 --> 00:01:14,088
+{\fs17}El desayuno es mi comida favorita.\N{\fs15}Breakfast is my favorite meal.
+
+17
+00:01:14,088 --> 00:01:18,480
+{\fs17}¿Ya terminaste tus tareas del trabajo?\N{\fs15}Did you finish your work tasks already?
+
+18
+00:01:18,480 --> 00:01:23,448
+{\fs17}Todavía no, tengo muchas reuniones hoy.\N{\fs15}Not yet, I have many meetings today.
+
+19
+00:01:23,448 --> 00:01:27,816
+{\fs17}Mi jefe quiere el informe para la tarde.\N{\fs15}My boss wants the report for this afternoon.
+
+20
+00:01:27,816 --> 00:01:31,584
+{\fs17}Es un día muy ocupado para mí.\N{\fs15}It is a very busy day for me.
+
+21
+00:01:31,584 --> 00:01:36,695
+{\fs15}Entiendo, yo también tengo mucho que hacer.\N{\fs13}I understand, I also have a lot to do.
+
+22
+00:01:36,695 --> 00:01:41,664
+{\fs15}Debo ir al supermercado después de trabajar.\N{\fs13}I must go to the supermarket after work.
+
+23
+00:01:41,664 --> 00:01:45,888
+{\fs17}No hay nada de comida en mi nevera.\N{\fs15}There is no food in my fridge.
+
+24
+00:01:45,888 --> 00:01:49,487
+{\fs17}¿Qué vas a comprar para la cena?\N{\fs15}What are you going to buy for dinner?
+
+25
+00:01:49,487 --> 00:01:53,807
+{\fs17}Quiero cocinar una pasta con verduras.\N{\fs15}I want to cook a pasta with vegetables.
+
+26
+00:01:53,807 --> 00:01:58,343
+{\fs17}Es una receta muy rápida y saludable.\N{\fs15}It is a very fast and healthy recipe.
+
+27
+00:01:58,343 --> 00:02:04,295
+{\fs15}¡Qué rico! Me encanta la comida italiana.\N{\fs13}Yummy! I love Italian food.
+
+28
+00:02:04,295 --> 00:02:08,063
+{\fs17}Yo voy a pedir una pizza hoy.\N{\fs15}I am going to order a pizza today.
+
+29
+00:02:08,063 --> 00:02:12,527
+{\fs17}No tengo tiempo para cocinar esta noche.\N{\fs15}I don't have time to cook tonight.
+
+30
+00:02:12,527 --> 00:02:16,775
+{\fs17}A veces es mejor descansar un poco.\N{\fs15}Sometimes it is better to rest a bit.
+
+31
+00:02:16,775 --> 00:02:22,007
+{\fs15}Tienes razón, no debemos estresarnos tanto.\N{\fs13}You are right, we should not stress so much.
+
+32
+00:02:22,007 --> 00:02:26,855
+{\fs15}¿Qué haces para relajarte después del trabajo?\N{\fs13}What do you do to relax after work?
+
+33
+00:02:26,855 --> 00:02:31,847
+{\fs15}Normalmente escucho música o leo un libro.\N{\fs13}I normally listen to music or read a book.
+
+34
+00:02:31,847 --> 00:02:36,599
+{\fs15}Ahora estoy leyendo una novela de misterio.\N{\fs13}Now I am reading a mystery novel.
+
+35
+00:02:36,599 --> 00:02:40,919
+{\fs17}Es muy interesante y me gusta mucho.\N{\fs15}It is very interesting and I like it a lot.
+
+36
+00:02:40,919 --> 00:02:45,263
+{\fs17}A mí me gusta ver series en Netflix.\N{\fs15}I like to watch series on Netflix.
+
+37
+00:02:45,263 --> 00:02:49,871
+{\fs17}Ayer empecé una serie sobre viajes.\N{\fs15}Yesterday I started a series about travel.
+
+38
+00:02:49,871 --> 00:02:54,479
+{\fs17}Los paisajes son realmente hermosos.\N{\fs15}The landscapes are truly beautiful.
+
+39
+00:02:54,479 --> 00:03:00,000
+{\fs17}¡Qué bien! Me gustaría viajar pronto.\N{\fs15}That's great! I would like to travel soon.
+
+40
+00:03:00,000 --> 00:03:04,680
+{\fs15}¿Tienes planes para el próximo fin de semana?\N{\fs13}Do you have plans for next weekend?
+
+41
+00:03:04,680 --> 00:03:09,168
+{\fs17}Sí, voy a visitar a mis padres.\N{\fs15}Yes, I am going to visit my parents.
+
+42
+00:03:09,168 --> 00:03:13,512
+{\fs17}Viven en un pueblo pequeño y tranquilo.\N{\fs15}They live in a small and quiet town.
+
+43
+00:03:13,512 --> 00:03:17,831
+{\fs17}Me gusta respirar el aire puro allí.\N{\fs15}I like to breathe the fresh air there.
+
+44
+00:03:17,831 --> 00:03:22,487
+{\fs17}Qué envidia, yo me quedaré en la ciudad.\N{\fs15}I'm jealous, I will stay in the city.
+
+45
+00:03:22,487 --> 00:03:26,400
+{\fs17}Tengo que limpiar mi casa a fondo.\N{\fs15}I have to clean my house thoroughly.
+
+46
+00:03:26,400 --> 00:03:30,743
+{\fs17}Y también lavar toda mi ropa sucia.\N{\fs15}And also wash all my dirty clothes.
+
+47
+00:03:30,743 --> 00:03:36,575
+{\fs15}¡Qué aburrido! Pero es necesario hacerlo.\N{\fs13}How boring! But it is necessary to do it.
+
+48
+00:03:36,575 --> 00:03:40,127
+{\fs17}¿Cómo está el clima en el pueblo?\N{\fs15}How is the weather in the town?
+
+49
+00:03:40,127 --> 00:03:43,991
+{\fs17}Parece que va a hacer mucho sol.\N{\fs15}It looks like it's going to be very sunny.
+
+50
+00:03:43,991 --> 00:03:48,335
+{\fs17}Llevaré mi sombrero y gafas de sol.\N{\fs15}I will take my hat and sunglasses.
+
+51
+00:03:48,335 --> 00:03:52,799
+{\fs17}Aquí en la ciudad quizás llueva mañana.\N{\fs15}Here in the city it might rain tomorrow.
+
+52
+00:03:52,799 --> 00:03:56,375
+{\fs17}El cielo está muy gris hoy.\N{\fs15}The sky is very gray today.
+
+53
+00:03:56,375 --> 00:04:00,575
+{\fs17}No me gusta cuando el día está oscuro.\N{\fs15}I don't like when the day is dark.
+
+54
+00:04:00,575 --> 00:04:04,343
+{\fs17}A mí me gusta la lluvia suave.\N{\fs15}I like the soft rain.
+
+55
+00:04:04,343 --> 00:04:09,023
+{\fs15}Es perfecta para quedarse en casa leyendo.\N{\fs13}It is perfect for staying at home reading.
+
+56
+00:04:09,023 --> 00:04:12,575
+{\fs17}¿Te gusta el café o el té?\N{\fs15}Do you like coffee or tea?
+
+57
+00:04:12,575 --> 00:04:16,799
+{\fs17}Prefiero el café, es más fuerte.\N{\fs15}I prefer coffee, it is stronger.
+
+58
+00:04:16,799 --> 00:04:20,759
+{\fs17}Tomo tres tazas de café al día.\N{\fs15}I drink three cups of coffee a day.
+
+59
+00:04:20,759 --> 00:04:26,615
+{\fs17}¡Eso es mucho! Yo prefiero el té verde.\N{\fs15}That is a lot! I prefer green tea.
+
+60
+00:04:26,615 --> 00:04:30,503
+{\fs17}Es mejor para la salud y el sueño.\N{\fs15}It is better for health and sleep.
+
+61
+00:04:30,503 --> 00:04:35,111
+{\fs17}Lo sé, pero el café me da energía.\N{\fs15}I know, but coffee gives me energy.
+
+62
+00:04:35,111 --> 00:04:38,951
+{\fs17}Sin café no puedo pensar bien.\N{\fs15}Without coffee I cannot think well.
+
+63
+00:04:38,951 --> 00:04:42,359
+{\fs17}¿Vas al gimnasio a menudo?\N{\fs15}Do you go to the gym often?
+
+64
+00:04:42,359 --> 00:04:47,399
+{\fs17}Voy tres veces por semana, normalmente.\N{\fs15}I go three times a week, usually.
+
+65
+00:04:47,399 --> 00:04:51,815
+{\fs15}Pero prefiero hacer deporte al aire libre.\N{\fs13}But I prefer doing sports outdoors.
+
+66
+00:04:51,815 --> 00:04:55,535
+{\fs17}Yo practico yoga en mi sala.\N{\fs15}I practice yoga in my living room.
+
+67
+00:04:55,535 --> 00:04:59,567
+{\fs17}Es muy bueno para la flexibilidad.\N{\fs15}It is very good for flexibility.
+
+68
+00:04:59,567 --> 00:05:03,263
+{\fs17}Y me ayuda a dormir mejor.\N{\fs15}And it helps me sleep better.
+
+69
+00:05:03,263 --> 00:05:07,367
+{\fs17}Debería probar el yoga algún día.\N{\fs15}I should try yoga someday.
+
+70
+00:05:07,367 --> 00:05:11,495
+{\fs17}Mi espalda me duele un poco siempre.\N{\fs15}My back always hurts a bit.
+
+71
+00:05:11,495 --> 00:05:15,503
+{\fs17}Sí, te lo recomiendo mucho.\N{\fs15}Yes, I highly recommend it to you.
+
+72
+00:05:15,503 --> 00:05:19,583
+{\fs17}Podemos ir a una clase juntos.\N{\fs15}We can go to a class together.
+
+73
+00:05:19,583 --> 00:05:23,207
+{\fs17}¡Me parece una idea genial!\N{\fs15}That sounds like a great idea!
+
+74
+00:05:23,207 --> 00:05:26,351
+{\fs17}¿Qué hora te viene mejor?\N{\fs15}What time works best for you?
+
+75
+00:05:26,351 --> 00:05:30,431
+{\fs17}El sábado por la mañana está bien.\N{\fs15}Saturday morning is fine.
+
+76
+00:05:30,431 --> 00:05:34,103
+{\fs17}A las diez es una buena hora.\N{\fs15}Ten o'clock is a good time.
+
+77
+00:05:34,103 --> 00:05:39,143
+{\fs17}Perfecto, nos vemos el sábado entonces.\N{\fs15}Perfect, see you on Saturday then.
+
+78
+00:05:39,143 --> 00:05:42,983
+{\fs17}Ahora debo volver a mi trabajo.\N{\fs15}Now I must return to my work.
+
+79
+00:05:42,983 --> 00:05:46,655
+{\fs17}Que tengas un día muy bonito.\N{\fs15}Have a very nice day.
+
+80
+00:05:46,655 --> 00:05:51,023
+{\fs17}Igualmente para ti, mucha suerte.\N{\fs15}Likewise for you, good luck.
+
+81
+00:05:51,023 --> 00:05:55,151
+{\fs17}Hablamos más tarde por teléfono.\N{\fs15}We'll talk later by phone.
+
+82
+00:05:55,151 --> 00:05:58,991
+{\fs17}Adiós, cuídate mucho.\N{\fs15}Goodbye, take good care of yourself.
+
+83
+00:05:58,991 --> 00:06:03,767
+{\fs17}¡Adiós! Hasta pronto.\N{\fs15}Bye! See you soon.
+
+84
+00:06:03,767 --> 00:06:05,807
+{\fs17}¡Chao!\N{\fs15}Bye!
+
+85
+00:06:05,807 --> 00:06:08,471
+{\fs17}Nos vemos.\N{\fs15}See you.
 
