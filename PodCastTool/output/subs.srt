@@ -1,8 +1,16 @@
 1
-00:00:00,000 --> 00:00:02,136
-{\fs17}Xin chào các bạn\N{\fs15}Chào mừng đến với Podcast
+00:00:00,000 --> 00:00:04,895
+{\fs17}Además, quiero probar la comida local.\N{\fs15}Also, I want to try the local food.
 
 2
-00:00:02,136 --> 00:00:03,936
-{\fs17}Chào anh Nam\N{\fs15}Rất vui được gặp anh
+00:00:04,895 --> 00:00:10,152
+{\fs14}Yo también, la gastronomía es fundamental.\N{\fs12}Me too, gastronomy is essential.
+
+3
+00:00:10,152 --> 00:00:14,903
+{\fs14}Entonces hagamos un itinerario detallado.\N{\fs12}Then let's make a detailed itinerary.
+
+4
+00:00:14,903 --> 00:00:19,512
+{\fs17}De acuerdo, estoy muy emocionada.\N{\fs15}Alright, I'm very excited.
 
