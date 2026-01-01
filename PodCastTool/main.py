@@ -127,10 +127,10 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitle
                  f"Alignment=2,MarginV=40'")
 
     filter_chain = (
-        f"[0:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080[bg];"
-        f"[1:a]showwaves=s=800x200:mode=line:colors=white:draw=full[wave];"
-        f"[bg][wave]overlay=(W-w)/2:600[v_wave];"
-    )
+            f"[0:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080[bg];"
+            f"[1:a]showwaves=s=800x200:mode=p2p:colors=white:draw=full[wave];"
+            f"[bg][wave]overlay=(W-w)/2:600[v_wave];"
+        )
 
     if show_subtitles:
         filter_chain += f"[v_wave]{sub_style},fps=12[v]"
