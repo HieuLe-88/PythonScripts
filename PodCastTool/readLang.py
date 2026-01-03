@@ -116,8 +116,8 @@ def normalize_pinyin_tokens(py_text, ch_text):
 
     Strategy:
     - If pinyin has spaces and token count == Chinese character count, use them.
-    - Otherwise, try to split using a pinyin-syllable regex (handles zh/ch/sh, finals n/ng/r, and tone vowels).
-    - If regex syllable segmentation matches the character count, use it; otherwise fallback to previous heuristics.
+    - Otherwise, flatten the pinyin and perform a segmentation into ch_count pieces.
+    - Prefer segmentations where each piece contains a vowel and each segment (except maybe the first) starts with a consonant.
     """
     if not py_text:
         return []
@@ -128,41 +128,65 @@ def normalize_pinyin_tokens(py_text, ch_text):
     if len(tokens) == ch_count:
         return tokens
 
-    # Flatten and try regex syllable splitting
     s = ''.join(tokens)
-    # A pinyin syllable regex (simplified): optional initial (zh|ch|sh|[bpmfdtnlgkhjqxrywzcs]) + vowel cluster (with tone marks) + optional final (n|ng|r)
-    syll_re = re.compile(r"(zh|ch|sh|[bpmfdtnlgkhjqxrywzcs]?)([aeiouüvāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]+)(n|ng|r)?", re.IGNORECASE)
-    parts = [m.group(0) for m in syll_re.finditer(s)]
-    if parts and len(parts) == ch_count:
+    s = s.strip()
+    if not s:
+        return [''] * ch_count
+
+    vowels = set(list('aeiouüāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜAEIOUÜĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙǕǗǙǛ'))
+
+    def has_vowel(seg):
+        return any(ch in vowels for ch in seg)
+
+    def is_consonant(ch):
+        return ch.lower() not in 'aeiouüāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜAEIOUÜĀÁǍÀĒÉĚÈĪÍǏÌŌÓǑÒŪÚǓÙǕǗǙǛ'
+
+    # Backtracking segmentation: try to split s into ch_count parts where each has at least one vowel
+    L = len(s)
+    memo = {}
+
+    def backtrack(start, parts_left):
+        key = (start, parts_left)
+        if key in memo:
+            return memo[key]
+        if parts_left == 1:
+            seg = s[start:]
+            if seg and has_vowel(seg):
+                return [seg]
+            else:
+                return None
+        # heuristic: try longer first to avoid tiny prefixes (prefer natural syllables)
+        best = None
+        # maximum possible end to leave enough chars for remaining parts
+        for end in range(L - (parts_left - 1), start, -1):
+            seg = s[start:end]
+            # each segment must contain a vowel
+            if not has_vowel(seg):
+                continue
+            rest = backtrack(end, parts_left - 1)
+            if rest is not None:
+                candidate = [seg] + rest
+                # prefer candidate where next segments start with consonant (more natural), compute score
+                score = 0
+                # +1 for each subsequent part that starts with consonant
+                for r in candidate[1:]:
+                    if r and is_consonant(r[0]):
+                        score += 1
+                # prefer higher score and prefer balanced lengths
+                # We'll keep the first candidate with maximal score; for ties, keep existing
+                if best is None:
+                    best = (candidate, score)
+                else:
+                    if score > best[1]:
+                        best = (candidate, score)
+        memo[key] = best[0] if best else None
+        return memo[key]
+
+    parts = backtrack(0, ch_count)
+    if parts:
         return parts
 
-    # If regex produced some reasonable parts but counts do not match, try to adjust by merging/splitting
-    if parts and 0 < len(parts) < ch_count:
-        flat = parts.copy()
-        while len(flat) < ch_count:
-            idx = max(range(len(flat)), key=lambda i: len(flat[i]))
-            s_to_split = flat.pop(idx)
-            if len(s_to_split) < 2:
-                flat.insert(idx, s_to_split)
-                break
-            mid = len(s_to_split) // 2
-            flat.insert(idx, s_to_split[:mid])
-            flat.insert(idx+1, s_to_split[mid:])
-        if len(flat) == ch_count:
-            return flat
-
-    if parts and len(parts) > ch_count:
-        # if too many parts, merge the smallest until counts match
-        flat = parts.copy()
-        while len(flat) > ch_count and len(flat) > 1:
-            # merge two smallest adjacent
-            min_idx = min(range(len(flat)-1), key=lambda i: len(flat[i]) + len(flat[i+1]))
-            merged = flat[min_idx] + flat[min_idx+1]
-            flat[min_idx:min_idx+2] = [merged]
-        if len(flat) == ch_count:
-            return flat
-
-    # Fallback to previous even-slicing heuristic
+    # Fallback: even slicing
     total = len(s)
     if total == 0:
         return [''] * ch_count
@@ -555,17 +579,33 @@ def generate_video():
                         for ch in s_line:
                             if ch.isspace():
                                 continue
-                            raw_w = get_text_dimensions(ch, f_s)[0]
+                            raw_w, raw_h = get_text_dimensions(ch, f_s)
                             pad = max(4, int(sdraw.get('font_size', getattr(f_s, 'size', base_font_size)) * 0.12))
                             ww = raw_w + pad
+                            # compute glyph bounding box to get accurate visual width and left offset
+                            try:
+                                temp_img = Image.new('L', (raw_w + 40, raw_h + 40), color=255)
+                                temp_draw = ImageDraw.Draw(temp_img)
+                                temp_draw.text((20, 0), ch, font=f_s, fill=0)
+                                bbox = temp_img.getbbox()
+                                if bbox:
+                                    glyph_x0 = bbox[0] - 20
+                                    glyph_w = bbox[2] - bbox[0]
+                                else:
+                                    glyph_x0 = 0
+                                    glyph_w = raw_w
+                            except Exception:
+                                glyph_x0 = 0
+                                glyph_w = raw_w
+
                             # attempt to get corresponding pinyin token
                             p_token = None
                             p_tokens = sdraw.get('pinyin_tokens', [])
                             pos = char_pos.get(s_idx, 0)
                             if pos < len(p_tokens):
                                 p_token = p_tokens[pos]
-                            # build token with pinyin and font size for later use; include raw_width and pad so pinyin centers over the character
-                            item = {'word': ch, 'font': f_s, 'font_path': sdraw.get('font_path'), 'idx': global_idx, 'width': ww, 'raw_width': raw_w, 'pad': pad, 's_idx': s_idx, 'pinyin': p_token, 'font_size': sdraw.get('font_size', getattr(f_s, 'size', base_font_size))}
+                            # build token with pinyin and font size for later use; include raw_width, pad and glyph metrics
+                            item = {'word': ch, 'font': f_s, 'font_path': sdraw.get('font_path'), 'idx': global_idx, 'width': ww, 'raw_width': raw_w, 'pad': pad, 'glyph_x0': glyph_x0, 'glyph_width': glyph_w, 's_idx': s_idx, 'pinyin': p_token, 'font_size': sdraw.get('font_size', getattr(f_s, 'size', base_font_size))}
                             if current_width == 0 or current_width + ww <= max_box_width:
                                 current_line.append(item)
                                 current_width += ww
@@ -664,17 +704,22 @@ def generate_video():
                         if item.get('pinyin'):
                             p_text = item['pinyin']
                             p_fs_size = max(10, int(item.get('font_size', base_font_size) * 0.45))
-                            # prefer using the same font face used to draw the Chinese character for consistent metrics
+                            # prefer a Latin font for pinyin (Arial) if available for better diacritic metrics
                             try:
-                                p_font_path = item.get('font_path', font_path)
-                                p_fs = ImageFont.truetype(p_font_path, p_fs_size)
+                                p_fs = ImageFont.truetype('arial.ttf', p_fs_size)
                             except Exception:
-                                p_fs = ImageFont.truetype(font_path, max(10, base_font_size//2))
+                                try:
+                                    p_font_path = item.get('font_path', font_path)
+                                    p_fs = ImageFont.truetype(p_font_path, p_fs_size)
+                                except Exception:
+                                    p_fs = ImageFont.truetype(font_path, max(10, base_font_size//2))
                             p_w, p_h = get_text_dimensions(p_text, p_fs)
-                            # center pinyin over the raw character width (not including added pad)
-                            p_x = xt + (item.get('raw_width', item['width']) - p_w) / 2
+                            # center pinyin over the actual glyph bounding box (glyph_x0 + glyph_width)
+                            g_x0 = item.get('glyph_x0', 0)
+                            g_w = item.get('glyph_width', item.get('raw_width', item['width']))
+                            p_x = xt + g_x0 + (g_w - p_w) / 2
                             p_y = yt - p_h - 4
-                            draw.text((p_x, p_y), p_text, font=p_fs, fill=(0, 0, 0))
+                            draw.text((int(p_x), int(p_y)), p_text, font=p_fs, fill=(0, 0, 0))
 
                         color = (255, 0, 0) if item['idx'] == w_idx else (0, 0, 0)
                         draw.text((xt, yt), item['word'], font=item['font'], fill=color)
