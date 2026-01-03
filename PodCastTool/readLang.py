@@ -61,18 +61,17 @@ def wrap_and_paginate_with_mapping(sentence_pairs, font_path, base_size, max_wid
     line_spacing = 10
 
     for top_sent, bottom_sent in sentence_pairs:
-        # try adding this top sentence to the current page candidate and compute height by per-sentence fits
+        # try adding this top sentence to the current page candidate and compute height using combined text to reflect shared lines
         candidate_top_sentences = combined_top_sentences + [top_sent]
-        cand_total_h = 0
-        for s in candidate_top_sentences:
-            _, _, lh, total_h = fit_sentence_font(s, font_path, base_size, max_width)
-            cand_total_h += total_h
+        top_combined_candidate = " ".join(candidate_top_sentences).strip()
+        _, _, lh, cand_total_h = fit_sentence_font(top_combined_candidate, font_path, base_size, max_width)
 
         if combined_top_sentences and cand_total_h > max_height:
             # push current page built from combined_top_sentences
             top_combined_text = " ".join(combined_top_sentences).strip()
+            f_top, lines_top, lh_top, total_h_top = fit_sentence_font(top_combined_text, font_path, base_size, max_width)
             pages.append({
-                'top_lines': wrap_text_to_lines(top_combined_text, ImageFont.truetype(font_path, base_size), max_width),
+                'top_lines': lines_top,
                 'top_full_text': top_combined_text,
                 'bottom_full_text': combined_bottom,
                 'top_sentences': combined_top_sentences.copy(),
@@ -89,8 +88,9 @@ def wrap_and_paginate_with_mapping(sentence_pairs, font_path, base_size, max_wid
 
     if combined_top_sentences:
         top_combined_text = " ".join(combined_top_sentences).strip()
+        f_top, lines_top, lh_top, total_h_top = fit_sentence_font(top_combined_text, font_path, base_size, max_width)
         pages.append({
-            'top_lines': wrap_text_to_lines(top_combined_text, ImageFont.truetype(font_path, base_size), max_width),
+            'top_lines': lines_top,
             'top_full_text': top_combined_text,
             'bottom_full_text': combined_bottom,
             'top_sentences': combined_top_sentences.copy(),
