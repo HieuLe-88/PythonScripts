@@ -732,6 +732,22 @@ def generate_video():
 
                     # draw words with active word in red and pinyin above each Chinese character when available
                     xt = 80
+
+                    # Prepare a single pinyin font and baseline for this line so all pinyin share the same y position
+                    p_fs_line = None
+                    p_y_line = None
+                    if any(item.get('pinyin') for item in line):
+                        p_fs_size_line = max(max(10, int(item.get('font_size', base_font_size) * 0.45)) for item in line if item.get('pinyin'))
+                        try:
+                            p_fs_line = ImageFont.truetype('arial.ttf', p_fs_size_line)
+                        except Exception:
+                            try:
+                                p_fs_line = ImageFont.truetype(font_path, p_fs_size_line)
+                            except Exception:
+                                p_fs_line = ImageFont.truetype(font_path, max(10, base_font_size//2))
+                        _, p_h_line = get_text_dimensions("Ay", p_fs_line)
+                        p_y_line = yt - p_h_line - 4
+
                     for item in line:
                         # determine char draw x: center the actual glyph inside the token's reserved width when possible
                         if 'raw_width' in item:
@@ -740,24 +756,14 @@ def generate_video():
                             char_x = xt
 
                         # draw per-token pinyin (centered above the actual glyph) if available
-                        if item.get('pinyin'):
+                        if item.get('pinyin') and p_fs_line:
                             p_text = item['pinyin']
-                            p_fs_size = max(10, int(item.get('font_size', base_font_size) * 0.45))
-                            try:
-                                p_fs = ImageFont.truetype('arial.ttf', p_fs_size)
-                            except Exception:
-                                try:
-                                    p_font_path = item.get('font_path', font_path)
-                                    p_fs = ImageFont.truetype(p_font_path, p_fs_size)
-                                except Exception:
-                                    p_fs = ImageFont.truetype(font_path, max(10, base_font_size//2))
-                            p_w, p_h = get_text_dimensions(p_text, p_fs)
+                            p_w, p_h = get_text_dimensions(p_text, p_fs_line)
                             g_x0 = item.get('glyph_x0', 0)
                             g_w = item.get('glyph_width', item.get('raw_width', item['width']))
                             # glyph's absolute x is char_x + glyph_x0
                             p_x = char_x + g_x0 + (g_w - p_w) / 2
-                            p_y = yt - p_h - 4
-                            draw.text((int(p_x), int(p_y)), p_text, font=p_fs, fill=(0, 0, 0))
+                            draw.text((int(p_x), int(p_y_line)), p_text, font=p_fs_line, fill=(0, 0, 0))
 
                         color = (255, 0, 0) if item['idx'] == w_idx else (0, 0, 0)
                         draw.text((int(char_x), yt), item['word'], font=item['font'], fill=color)
