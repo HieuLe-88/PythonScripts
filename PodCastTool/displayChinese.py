@@ -1,54 +1,79 @@
 import numpy as np
+import re
 from PIL import Image, ImageDraw, ImageFont
-from moviepy.editor import ImageClip
-import os
+from moviepy.editor import ImageClip, concatenate_videoclips
+from pypinyin import pinyin, Style
 
 # --- Configuration ---
-chinese_text = "你好"
-pinyin_text = "nǐ hǎo"
-font_path = r"C:\Windows\Fonts\msyh.ttc"  # Microsoft YaHei
-video_size = (1280, 720)
-duration = 5
+INPUT_FILE = "input.txt" # Just put Hanzi here, e.g., "你好，今天我们聊聊暑假的旅行计划吧。"
+FONT_PATH = "C:\\Windows\\Fonts\\msyh.ttc" 
+VIDEO_SIZE = (1280, 720)
+DURATION = 5
 
-# Font Sizes
-zh_size = 150
-py_size = int(zh_size * 0.4) # 40% of Chinese size
-spacing = 20 # Space between Pinyin and Chinese
+def create_auto_aligned_frame(text_line):
+    img = Image.new('RGB', VIDEO_SIZE, color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
+    
+    h_font = ImageFont.truetype(FONT_PATH, 60)
+    p_font = ImageFont.truetype(FONT_PATH, 30) # 50% size
+    
+    # 1. Automatically get Pinyin for each character
+    # pinyin() returns a list of lists: [['nǐ'], ['hǎo'], ...]
+    pinyin_data = pinyin(text_line, style=Style.TONE)
+    
+    # 2. Layout Settings
+    char_spacing = 95
+    line_height = 160
+    chars_per_line = (VIDEO_SIZE[0] - 100) // char_spacing
+    
+    # 3. Split Hanzi and Pinyin into matching lines
+    hanzi_chars = list(text_line.strip())
+    lines_h = [hanzi_chars[i:i + chars_per_line] for i in range(0, len(hanzi_chars), chars_per_line)]
+    lines_p = [pinyin_data[i:i + chars_per_line] for i in range(0, len(pinyin_data), chars_per_line)]
+    
+    total_h = len(lines_h) * line_height
+    current_y = (VIDEO_SIZE[1] - total_h) // 2
+    
+    # 4. Drawing Loop
+    for line_idx, h_line in enumerate(lines_h):
+        p_line = lines_p[line_idx]
+        
+        # Center the line horizontally
+        total_line_width = len(h_line) * char_spacing
+        current_x = (VIDEO_SIZE[0] - total_line_width) // 2
+        
+        for i, char in enumerate(h_line):
+            slot_center_x = current_x + (char_spacing // 2)
+            
+            # --- Draw Hanzi ---
+            h_bbox = draw.textbbox((0, 0), char, font=h_font)
+            h_w = h_bbox[2] - h_bbox[0]
+            draw.text((slot_center_x - h_w/2, current_y + 40), char, font=h_font, fill="black")
+            
+            # --- Draw Pinyin (only if it's a Chinese character) ---
+            if re.match(r'[\u4e00-\u9fff]', char):
+                # p_line[i] is a list like ['nǐ'], so we take [0]
+                p_text = p_line[i][0]
+                p_bbox = draw.textbbox((0, 0), p_text, font=p_font)
+                p_w = p_bbox[2] - p_bbox[0]
+                draw.text((slot_center_x - p_w/2, current_y), p_text, font=p_font, fill="black")
+            
+            current_x += char_spacing
+        current_y += line_height
+        
+    return np.array(img)
 
-# --- Processing ---
-img = Image.new('RGB', video_size, color=(0, 0, 0))
-draw = ImageDraw.Draw(img)
+# --- Execute ---
+clips = []
+with open(INPUT_FILE, "r", encoding="utf-8") as f:
+    for line in f:
+        clean_line = line.strip()
+        if clean_line:
+            # If your input still has the "|" format, just take the first part
+            hanzi_only = clean_line.split("|")[0]
+            frame_data = create_auto_aligned_frame(hanzi_only)
+            clips.append(ImageClip(frame_data).set_duration(DURATION))
 
-# Load Fonts
-zh_font = ImageFont.truetype(font_path, zh_size)
-py_font = ImageFont.truetype(font_path, py_size)
-
-# Calculate Dimensions for Centering
-def get_text_dims(text, font):
-    bbox = draw.textbbox((0, 0), text, font=font)
-    return bbox[2] - bbox[0], bbox[3] - bbox[1]
-
-zh_w, zh_h = get_text_dims(chinese_text, zh_font)
-py_w, py_h = get_text_dims(pinyin_text, py_font)
-
-# Total height of the text block
-total_h = py_h + spacing + zh_h
-
-# Starting Y position (to center the whole block)
-start_y = (video_size[1] - total_h) // 2
-
-# Draw Pinyin (Top)
-py_x = (video_size[0] - py_w) // 2
-draw.text((py_x, start_y), pinyin_text, font=py_font, fill=(255, 255, 255))
-
-# Draw Chinese (Bottom)
-zh_x = (video_size[0] - zh_w) // 2
-zh_y = start_y + py_h + spacing
-draw.text((zh_x, zh_y), chinese_text, font=zh_font, fill=(255, 255, 255))
-
-# --- Export to MP4 ---
-numpy_img = np.array(img)
-clip = ImageClip(numpy_img).set_duration(duration)
-clip.write_videofile("chinese_pinyin.mp4", fps=24)
-
-print("Video successfully created: chinese_pinyin.mp4")
+if clips:
+    final = concatenate_videoclips(clips, method="compose")
+    final.write_videofile("auto_aligned_pinyin.mp4", fps=24)

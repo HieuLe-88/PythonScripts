@@ -9,6 +9,15 @@ import asyncio
 import subprocess
 import edge_tts
 
+# Optional: pypinyin for automatic pinyin generation when input does not provide it
+try:
+    from pypinyin import pinyin as _pypinyin_pinyin, Style as _pypinyin_Style
+    HAVE_PYPINYIN = True
+except Exception:
+    _pypinyin_pinyin = None
+    _pypinyin_Style = None
+    HAVE_PYPINYIN = False
+
 # GUI voice/speed options
 VOICE_OPTIONS = {
     "Jenny (EN)": "en-US-JennyNeural",
@@ -204,6 +213,19 @@ def normalize_pinyin_tokens(py_text, ch_text):
     return parts
 
 
+def get_pinyin_for_chinese(ch_text):
+    """Return a space-separated pinyin string for a Chinese text using pypinyin if available."""
+    if not ch_text:
+        return ''
+    if not HAVE_PYPINYIN:
+        return ''
+    try:
+        toks = _pypinyin_pinyin(ch_text, style=_pypinyin_Style.TONE, errors='default')
+        return ' '.join(t[0] for t in toks)
+    except Exception:
+        return ''
+
+
 def wrap_text_to_lines(text, font, max_width):
     words = text.split()
     lines = []
@@ -391,16 +413,27 @@ def generate_video():
                 for line in lines:
                     parts = [p.strip() for p in line.split('|')]
                     if len(parts) == 3:
-                        # Chinese|Pinyin|English
-                        sentence_pairs.append(((parts[0], parts[1]), parts[2]))
+                        # Chinese|Pinyin|English -> prefer auto-generated pinyin for Chinese tops
+                        ch = parts[0]
+                        if re.search(r'[\u4e00-\u9fff]', ch):
+                            auto_py = get_pinyin_for_chinese(ch)
+                            py_to_use = auto_py if auto_py else parts[1]
+                            sentence_pairs.append(((ch, py_to_use), parts[2]))
+                        else:
+                            sentence_pairs.append(((parts[0], parts[1]), parts[2]))
                     elif len(parts) == 2:
-                        # top|bottom
-                        sentence_pairs.append((parts[0], parts[1]))
+                        # top|bottom -> if top is Chinese, generate pinyin
+                        if re.search(r'[\u4e00-\u9fff]', parts[0]):
+                            py = get_pinyin_for_chinese(parts[0])
+                            sentence_pairs.append(((parts[0], py), parts[1]))
+                        else:
+                            sentence_pairs.append((parts[0], parts[1]))
                     elif len(parts) == 1:
                         # single column: decide by script detection
                         only = parts[0]
                         if re.search(r'[\u4e00-\u9fff]', only):
-                            sentence_pairs.append(((only, ''), ''))
+                            py = get_pinyin_for_chinese(only)
+                            sentence_pairs.append(((only, py), ''))
                         else:
                             sentence_pairs.append(('', only))
             else:
@@ -700,11 +733,16 @@ def generate_video():
                     # draw words with active word in red and pinyin above each Chinese character when available
                     xt = 80
                     for item in line:
-                        # draw per-token pinyin (centered above the token) if available
+                        # determine char draw x: center the actual glyph inside the token's reserved width when possible
+                        if 'raw_width' in item:
+                            char_x = xt + (item['width'] - item['raw_width']) / 2
+                        else:
+                            char_x = xt
+
+                        # draw per-token pinyin (centered above the actual glyph) if available
                         if item.get('pinyin'):
                             p_text = item['pinyin']
                             p_fs_size = max(10, int(item.get('font_size', base_font_size) * 0.45))
-                            # prefer a Latin font for pinyin (Arial) if available for better diacritic metrics
                             try:
                                 p_fs = ImageFont.truetype('arial.ttf', p_fs_size)
                             except Exception:
@@ -714,15 +752,15 @@ def generate_video():
                                 except Exception:
                                     p_fs = ImageFont.truetype(font_path, max(10, base_font_size//2))
                             p_w, p_h = get_text_dimensions(p_text, p_fs)
-                            # center pinyin over the actual glyph bounding box (glyph_x0 + glyph_width)
                             g_x0 = item.get('glyph_x0', 0)
                             g_w = item.get('glyph_width', item.get('raw_width', item['width']))
-                            p_x = xt + g_x0 + (g_w - p_w) / 2
+                            # glyph's absolute x is char_x + glyph_x0
+                            p_x = char_x + g_x0 + (g_w - p_w) / 2
                             p_y = yt - p_h - 4
                             draw.text((int(p_x), int(p_y)), p_text, font=p_fs, fill=(0, 0, 0))
 
                         color = (255, 0, 0) if item['idx'] == w_idx else (0, 0, 0)
-                        draw.text((xt, yt), item['word'], font=item['font'], fill=color)
+                        draw.text((int(char_x), yt), item['word'], font=item['font'], fill=color)
                         xt += item['width']
 
                     yt += line_h + 10
