@@ -110,6 +110,76 @@ def get_text_dimensions(text, font):
     bbox = font.getbbox(text)
     return bbox[2] - bbox[0], bbox[3] - bbox[1]
 
+
+def normalize_pinyin_tokens(py_text, ch_text):
+    """Normalize a pinyin string into a list of tokens aligned to Chinese characters when possible.
+
+    Strategy:
+    - If pinyin has spaces and token count == Chinese character count, use them.
+    - Otherwise, try to split using a pinyin-syllable regex (handles zh/ch/sh, finals n/ng/r, and tone vowels).
+    - If regex syllable segmentation matches the character count, use it; otherwise fallback to previous heuristics.
+    """
+    if not py_text:
+        return []
+    tokens = [t for t in py_text.split() if t.strip()]
+    ch_count = sum(1 for ch in ch_text if not ch.isspace())
+    if ch_count == 0:
+        return tokens
+    if len(tokens) == ch_count:
+        return tokens
+
+    # Flatten and try regex syllable splitting
+    s = ''.join(tokens)
+    # A pinyin syllable regex (simplified): optional initial (zh|ch|sh|[bpmfdtnlgkhjqxrywzcs]) + vowel cluster (with tone marks) + optional final (n|ng|r)
+    syll_re = re.compile(r"(zh|ch|sh|[bpmfdtnlgkhjqxrywzcs]?)([aeiouüvāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]+)(n|ng|r)?", re.IGNORECASE)
+    parts = [m.group(0) for m in syll_re.finditer(s)]
+    if parts and len(parts) == ch_count:
+        return parts
+
+    # If regex produced some reasonable parts but counts do not match, try to adjust by merging/splitting
+    if parts and 0 < len(parts) < ch_count:
+        flat = parts.copy()
+        while len(flat) < ch_count:
+            idx = max(range(len(flat)), key=lambda i: len(flat[i]))
+            s_to_split = flat.pop(idx)
+            if len(s_to_split) < 2:
+                flat.insert(idx, s_to_split)
+                break
+            mid = len(s_to_split) // 2
+            flat.insert(idx, s_to_split[:mid])
+            flat.insert(idx+1, s_to_split[mid:])
+        if len(flat) == ch_count:
+            return flat
+
+    if parts and len(parts) > ch_count:
+        # if too many parts, merge the smallest until counts match
+        flat = parts.copy()
+        while len(flat) > ch_count and len(flat) > 1:
+            # merge two smallest adjacent
+            min_idx = min(range(len(flat)-1), key=lambda i: len(flat[i]) + len(flat[i+1]))
+            merged = flat[min_idx] + flat[min_idx+1]
+            flat[min_idx:min_idx+2] = [merged]
+        if len(flat) == ch_count:
+            return flat
+
+    # Fallback to previous even-slicing heuristic
+    total = len(s)
+    if total == 0:
+        return [''] * ch_count
+    if ch_count > total:
+        parts = list(s) + [''] * (ch_count - total)
+        return parts
+    avg = total // ch_count
+    rem = total % ch_count
+    parts = []
+    i = 0
+    for k in range(ch_count):
+        take = avg + (1 if k < rem else 0)
+        parts.append(s[i:i+take])
+        i += take
+    return parts
+
+
 def wrap_text_to_lines(text, font, max_width):
     words = text.split()
     lines = []
@@ -395,12 +465,12 @@ def generate_video():
                     # s = (chinese_text, pinyin)
                     ch_text, py_text = s
                     f_s, lines_s, lh_s, _ = fit_sentence_font(ch_text, chinese_font_path, base_font_size, max_box_width)
-                    # split pinyin tokens (expect one token per character; if counts mismatch we'll fallback)
-                    p_tokens = [tok for tok in (py_text.split() if py_text else [])]
-                    top_sentence_draws.append({'font': f_s, 'font_size': getattr(f_s, 'size', base_font_size), 'lines': lines_s, 'line_h': lh_s, 'is_chinese': True, 'pinyin_tokens': p_tokens})
+                    # split pinyin tokens into per-character tokens when possible (use normalization heuristics)
+                    p_tokens = normalize_pinyin_tokens(py_text, ch_text)
+                    top_sentence_draws.append({'font': f_s, 'font_path': chinese_font_path, 'font_size': getattr(f_s, 'size', base_font_size), 'lines': lines_s, 'line_h': lh_s, 'is_chinese': True, 'pinyin_tokens': p_tokens})
                 else:
                     f_s, lines_s, lh_s, _ = fit_sentence_font(s, font_path, base_font_size, max_box_width)
-                    top_sentence_draws.append({'font': f_s, 'font_size': getattr(f_s, 'size', base_font_size), 'lines': lines_s, 'line_h': lh_s, 'is_chinese': False})
+                    top_sentence_draws.append({'font': f_s, 'font_path': font_path, 'font_size': getattr(f_s, 'size', base_font_size), 'lines': lines_s, 'line_h': lh_s, 'is_chinese': False})
 
             # Build word list and sentence word counts (Chinese: per-character; others: per-space word)
             sent_word_counts = []
@@ -485,15 +555,17 @@ def generate_video():
                         for ch in s_line:
                             if ch.isspace():
                                 continue
-                            ww = get_text_dimensions(ch + " ", f_s)[0]
+                            raw_w = get_text_dimensions(ch, f_s)[0]
+                            pad = max(4, int(sdraw.get('font_size', getattr(f_s, 'size', base_font_size)) * 0.12))
+                            ww = raw_w + pad
                             # attempt to get corresponding pinyin token
                             p_token = None
                             p_tokens = sdraw.get('pinyin_tokens', [])
                             pos = char_pos.get(s_idx, 0)
                             if pos < len(p_tokens):
                                 p_token = p_tokens[pos]
-                            # build token with pinyin and font size for later use
-                            item = {'word': ch, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx, 'pinyin': p_token, 'font_size': sdraw.get('font_size', getattr(f_s, 'size', base_font_size))}
+                            # build token with pinyin and font size for later use; include raw_width and pad so pinyin centers over the character
+                            item = {'word': ch, 'font': f_s, 'font_path': sdraw.get('font_path'), 'idx': global_idx, 'width': ww, 'raw_width': raw_w, 'pad': pad, 's_idx': s_idx, 'pinyin': p_token, 'font_size': sdraw.get('font_size', getattr(f_s, 'size', base_font_size))}
                             if current_width == 0 or current_width + ww <= max_box_width:
                                 current_line.append(item)
                                 current_width += ww
@@ -592,12 +664,15 @@ def generate_video():
                         if item.get('pinyin'):
                             p_text = item['pinyin']
                             p_fs_size = max(10, int(item.get('font_size', base_font_size) * 0.45))
+                            # prefer using the same font face used to draw the Chinese character for consistent metrics
                             try:
-                                p_fs = ImageFont.truetype(font_path, p_fs_size)
+                                p_font_path = item.get('font_path', font_path)
+                                p_fs = ImageFont.truetype(p_font_path, p_fs_size)
                             except Exception:
                                 p_fs = ImageFont.truetype(font_path, max(10, base_font_size//2))
                             p_w, p_h = get_text_dimensions(p_text, p_fs)
-                            p_x = xt + (item['width'] - p_w) / 2
+                            # center pinyin over the raw character width (not including added pad)
+                            p_x = xt + (item.get('raw_width', item['width']) - p_w) / 2
                             p_y = yt - p_h - 4
                             draw.text((p_x, p_y), p_text, font=p_fs, fill=(0, 0, 0))
 
