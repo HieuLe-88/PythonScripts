@@ -1,0 +1,2 @@
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\output\line_0.mp3'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\output\line_1.mp3'
