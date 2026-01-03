@@ -22,6 +22,87 @@ VOICE_OPTIONS = {
 }
 SPEED_OPTIONS = ["100%", "90%", "80%", "70%", "60%", "50%"]
 
+# Helper: locate a Chinese-capable font on this system
+def _can_render_glyph(path, glyph='你'):
+    try:
+        f = ImageFont.truetype(path, 32)
+        img = Image.new('L', (64, 64), color=255)
+        d = ImageDraw.Draw(img)
+        d.text((0, 0), glyph, font=f, fill=0)
+        return img.getbbox() is not None
+    except Exception:
+        return False
+
+
+def find_chinese_font():
+    # First try a few well-known paths
+    candidates = [
+        "C:/Users/USER/AppData/Local/Microsoft/Windows/Fonts/NotoSansCJKsc-Regular.otf",
+        "C:/Windows/Fonts/msyh.ttf",
+        "C:/Windows/Fonts/SimHei.ttf",
+        "C:/Windows/Fonts/simsun.ttc",
+    ]
+    for p in candidates:
+        if os.path.exists(p) and _can_render_glyph(p):
+            return p
+
+    # Fallback: scan all fonts in Windows Fonts folder and test rendering
+    fonts_dir = "C:/Windows/Fonts"
+    try:
+        for fname in os.listdir(fonts_dir):
+            if not fname.lower().endswith(('.ttf', '.ttc', '.otf')):
+                continue
+            p = os.path.join(fonts_dir, fname)
+            if _can_render_glyph(p):
+                return p
+    except Exception:
+        pass
+
+    # last resort: try system font path entries from known places
+    try:
+        import matplotlib.font_manager as fm
+        for fpath in fm.findSystemFonts():
+            try:
+                if _can_render_glyph(fpath):
+                    return fpath
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    return None
+
+# Cache chosen chinese font at module load so GUI can display/debug it
+CHINESE_FONT = find_chinese_font()
+
+# If the cached font does not render, attempt a dynamic search the first time we need it
+def get_working_chinese_font():
+    global CHINESE_FONT
+    if CHINESE_FONT and _can_render_glyph(CHINESE_FONT):
+        return CHINESE_FONT
+    CHINESE_FONT = find_chinese_font()
+    return CHINESE_FONT
+
+def check_chinese_font():
+    """Check whether the chosen Chinese font can render a test glyph and show result."""
+    font_path = CHINESE_FONT or find_chinese_font()
+    if not font_path:
+        messagebox.showwarning("Chinese font", "No Chinese-capable font found on this system. Please install NotoSansCJK or MSYH.")
+        return
+    try:
+        test_char = '你'
+        f = ImageFont.truetype(font_path, 32)
+        img = Image.new('L', (64, 64), color=255)
+        d = ImageDraw.Draw(img)
+        d.text((0, 0), test_char, font=f, fill=0)
+        bbox = img.getbbox()
+        if bbox:
+            messagebox.showinfo("Chinese font", f"Font found: {font_path}\nGlyph renders OK (bbox={bbox}).")
+        else:
+            messagebox.showwarning("Chinese font", f"Font found: {font_path}\nBut glyph did not render (appears blank).")
+    except Exception as e:
+        messagebox.showerror("Chinese font test error", str(e))
+
 
 # --- CÁC HÀM HỖ TRỢ XỬ LÝ VĂN BẢN ---
 
@@ -61,7 +142,9 @@ def create_sentence_map(parts):
     sentence_lookup_map = {}
     for top, bottom in sentence_pairs:
         if top:
-            sentence_lookup_map[top] = bottom
+            # top may be a tuple (chinese, pinyin) or a string
+            key = top[0] if isinstance(top, tuple) else top
+            sentence_lookup_map[key] = bottom
 
 # --- HÀM MỚI: TRUY XUẤT TEXT BOX DƯỚI ---
 def get_bottom_text(current_top_full_sentence):
@@ -77,22 +160,52 @@ def wrap_and_paginate_with_mapping(sentence_pairs, font_path, base_size, max_wid
     combined_bottom_sentences = []
     line_spacing = 10
 
+    def top_text_for_measure(item):
+        # item may be a string or a tuple (chinese, pinyin)
+        if isinstance(item, tuple):
+            ch, py = item
+            return (ch + " " + py).strip()
+        return str(item)
+
+    # attempt to find a Chinese-capable font for measurements
+    chinese_font_path = get_working_chinese_font() or font_path
+
     for top_sent, bottom_sent in sentence_pairs:
-        # try adding this top sentence to the current page candidate and compute height using combined text to reflect shared lines
+        # try adding this top sentence to the current page candidate and compute height using combined text and pinyin if present
         candidate_top_sentences = combined_top_sentences + [top_sent]
-        top_combined_candidate = " ".join(candidate_top_sentences).strip()
-        _, _, lh, cand_total_h = fit_sentence_font(top_combined_candidate, font_path, base_size, max_width)
+        top_combined_candidate = " ".join(top_text_for_measure(s) for s in candidate_top_sentences).strip()
+        f_cand, lines_cand, lh_cand, total_h_cand = fit_sentence_font(top_combined_candidate, chinese_font_path if chinese_font_path else font_path, base_size, max_width)
+
+        # compute pinyin height for candidate if any tuple entries present
+        pinyin_text = " ".join([s[1] for s in candidate_top_sentences if isinstance(s, tuple) and s[1]])
+        pinyin_h = 0
+        if pinyin_text:
+            p_font = ImageFont.truetype(font_path, max(10, base_size//2))
+            p_lines = wrap_text_to_lines(pinyin_text, p_font, max_width)
+            _, p_lh = get_text_dimensions("Ay", p_font)
+            pinyin_h = len(p_lines) * (p_lh + 6)
+
+        cand_total_h = total_h_cand + pinyin_h
 
         if combined_top_sentences and cand_total_h > max_height:
             # push current page built from combined_top_sentences
-            top_combined_text = " ".join(combined_top_sentences).strip()
-            f_top, lines_top, lh_top, total_h_top = fit_sentence_font(top_combined_text, font_path, base_size, max_width)
+            top_combined_text = " ".join(top_text_for_measure(s) for s in combined_top_sentences).strip()
+            f_top, lines_top, lh_top, total_h_top = fit_sentence_font(top_combined_text, chinese_font_path if chinese_font_path else font_path, base_size, max_width)
+
+            # compute pinyin lines for the page
+            page_pinyin_text = " ".join([s[1] for s in combined_top_sentences if isinstance(s, tuple) and s[1]])
+            page_pinyin_lines = []
+            if page_pinyin_text:
+                p_font = ImageFont.truetype(font_path, max(10, base_size//2))
+                page_pinyin_lines = wrap_text_to_lines(page_pinyin_text, p_font, max_width)
+
             pages.append({
                 'top_lines': lines_top,
                 'top_full_text': top_combined_text,
                 'bottom_full_text': combined_bottom,
                 'top_sentences': combined_top_sentences.copy(),
-                'bottom_sentences': combined_bottom_sentences.copy()
+                'bottom_sentences': combined_bottom_sentences.copy(),
+                'pinyin_lines': page_pinyin_lines
             })
             # start new page
             combined_top_sentences = [top_sent]
@@ -104,14 +217,20 @@ def wrap_and_paginate_with_mapping(sentence_pairs, font_path, base_size, max_wid
             combined_bottom_sentences.append(bottom_sent)
 
     if combined_top_sentences:
-        top_combined_text = " ".join(combined_top_sentences).strip()
-        f_top, lines_top, lh_top, total_h_top = fit_sentence_font(top_combined_text, font_path, base_size, max_width)
+        top_combined_text = " ".join(top_text_for_measure(s) for s in combined_top_sentences).strip()
+        f_top, lines_top, lh_top, total_h_top = fit_sentence_font(top_combined_text, chinese_font_path if chinese_font_path else font_path, base_size, max_width)
+        page_pinyin_text = " ".join([s[1] for s in combined_top_sentences if isinstance(s, tuple) and s[1]])
+        page_pinyin_lines = []
+        if page_pinyin_text:
+            p_font = ImageFont.truetype(font_path, max(10, base_size//2))
+            page_pinyin_lines = wrap_text_to_lines(page_pinyin_text, p_font, max_width)
         pages.append({
             'top_lines': lines_top,
             'top_full_text': top_combined_text,
             'bottom_full_text': combined_bottom,
             'top_sentences': combined_top_sentences.copy(),
-            'bottom_sentences': combined_bottom_sentences.copy()
+            'bottom_sentences': combined_bottom_sentences.copy(),
+            'pinyin_lines': page_pinyin_lines
         })
     return pages
 
@@ -169,47 +288,68 @@ def generate_video():
 
     try:
         with open(txt_path, 'r', encoding='utf-8') as f:
-            raw = f.read().replace('\n', ' ').replace('\r', ' ').strip()
-            # Remove pipes so we can split into sentences reliably
-            raw_nopipes = raw.replace('|', ' ')
+            raw = f.read().strip()
 
-            # Split into sentence-like segments (keeps punctuation)
-            segs = [s.strip() for s in re.split(r'(?<=[.!?])\s*', raw_nopipes) if s.strip()]
+            # If the file uses pipe separators (e.g., Chinese|Pinyin|English per-line), parse per-line
+            if '|' in raw:
+                sentence_pairs = []
+                lines = [l.strip() for l in raw.splitlines() if l.strip()]
+                for line in lines:
+                    parts = [p.strip() for p in line.split('|')]
+                    if len(parts) == 3:
+                        # Chinese|Pinyin|English
+                        sentence_pairs.append(((parts[0], parts[1]), parts[2]))
+                    elif len(parts) == 2:
+                        # top|bottom
+                        sentence_pairs.append((parts[0], parts[1]))
+                    elif len(parts) == 1:
+                        # single column: decide by script detection
+                        only = parts[0]
+                        if re.search(r'[\u4e00-\u9fff]', only):
+                            sentence_pairs.append(((only, ''), ''))
+                        else:
+                            sentence_pairs.append(('', only))
+            else:
+                # Remove pipes so we can split into sentences reliably (legacy behavior)
+                raw_nopipes = raw.replace('|', ' ')
 
-            # Simple Spanish detector (accented chars or common Spanish words)
-            def is_spanish_sentence(s):
-                if re.search(r'[áéíóúñüÁÉÍÓÚÑÜ]', s):
-                    return True
-                spanish_words = {'estoy', 'hola', 'mundo', 'también', 'entonces', 'gracias', 'yo', 'tú', 'usted'}
-                tokens = re.findall(r'\w+', s.lower())
-                return any(t in spanish_words for t in tokens)
+                # Split into sentence-like segments (keeps punctuation)
+                segs = [s.strip() for s in re.split(r'(?<=[.!?])\s*', raw_nopipes) if s.strip()]
 
-            sentence_pairs = []
-            i = 0
-            while i < len(segs):
-                s = segs[i]
-                if is_spanish_sentence(s):
-                    # pair this spanish sentence with the next non-spanish (english) sentence
-                    j = i + 1
-                    while j < len(segs) and is_spanish_sentence(segs[j]):
-                        j += 1
-                    if j < len(segs):
-                        sentence_pairs.append((s, segs[j]))
-                        i = j + 1
+                # Simple Spanish detector (accented chars or common Spanish words)
+                def is_spanish_sentence(s):
+                    if re.search(r'[áéíóúñüÁÉÍÓÚÑÜ]', s):
+                        return True
+                    spanish_words = {'estoy', 'hola', 'mundo', 'también', 'entonces', 'gracias', 'yo', 'tú', 'usted'}
+                    tokens = re.findall(r'\w+', s.lower())
+                    return any(t in spanish_words for t in tokens)
+
+                sentence_pairs = []
+                i = 0
+                while i < len(segs):
+                    s = segs[i]
+                    if is_spanish_sentence(s):
+                        # pair this spanish sentence with the next non-spanish (english) sentence
+                        j = i + 1
+                        while j < len(segs) and is_spanish_sentence(segs[j]):
+                            j += 1
+                        if j < len(segs):
+                            sentence_pairs.append((s, segs[j]))
+                            i = j + 1
+                        else:
+                            sentence_pairs.append((s, ""))
+                            i = j
                     else:
-                        sentence_pairs.append((s, ""))
-                        i = j
-                else:
-                    # current is English; find next Spanish and pair (fallback)
-                    j = i + 1
-                    while j < len(segs) and not is_spanish_sentence(segs[j]):
-                        j += 1
-                    if j < len(segs):
-                        sentence_pairs.append((segs[j], s))
-                        i = j + 1
-                    else:
-                        sentence_pairs.append(("", s))
-                        i = j
+                        # current is English; find next Spanish and pair (fallback)
+                        j = i + 1
+                        while j < len(segs) and not is_spanish_sentence(segs[j]):
+                            j += 1
+                        if j < len(segs):
+                            sentence_pairs.append((segs[j], s))
+                            i = j + 1
+                        else:
+                            sentence_pairs.append(("", s))
+                            i = j
 
 
         font_path = "arial.ttf"
@@ -249,23 +389,47 @@ def generate_video():
 
             # Precompute fitted font + wrapped lines for each top sentence
             top_sentence_draws = []
+            chinese_font_path = find_chinese_font() or font_path
             for s in top_sentences:
-                f_s, lines_s, lh_s, _ = fit_sentence_font(s, font_path, base_font_size, max_box_width)
-                top_sentence_draws.append({'font': f_s, 'lines': lines_s, 'line_h': lh_s})
+                if isinstance(s, tuple):
+                    # s = (chinese_text, pinyin)
+                    ch_text = s[0]
+                    f_s, lines_s, lh_s, _ = fit_sentence_font(ch_text, chinese_font_path, base_font_size, max_box_width)
+                    top_sentence_draws.append({'font': f_s, 'lines': lines_s, 'line_h': lh_s, 'is_chinese': True})
+                else:
+                    f_s, lines_s, lh_s, _ = fit_sentence_font(s, font_path, base_font_size, max_box_width)
+                    top_sentence_draws.append({'font': f_s, 'lines': lines_s, 'line_h': lh_s, 'is_chinese': False})
 
-            # Build word list and sentence word counts
-            sent_word_counts = [sum(len(line.split()) for line in sdraw['lines']) for sdraw in top_sentence_draws]
+            # Build word list and sentence word counts (Chinese: per-character; others: per-space word)
+            sent_word_counts = []
+            for sdraw in top_sentence_draws:
+                if sdraw.get('is_chinese'):
+                    cnt = 0
+                    for line in sdraw['lines']:
+                        cnt += sum(1 for ch in line if not ch.isspace())
+                    sent_word_counts.append(cnt)
+                else:
+                    sent_word_counts.append(sum(len(line.split()) for line in sdraw['lines']))
             total_top_words = sum(sent_word_counts)
 
-            # --- Synthesize per-sentence TTS and compute frames-per-word distribution for this page ---
+                # --- Synthesize per-sentence TTS and compute frames-per-word distribution for this page ---
             page_word_frame_counts = []
             page_tts_files = []
+            pinyins_for_page = []
             for s_idx, s_text in enumerate(top_sentences):
+                # s_text may be a tuple (chinese, pinyin) or a plain string
+                if isinstance(s_text, tuple):
+                    ch_text, py_text = s_text
+                    pinyins_for_page.append(py_text)
+                else:
+                    ch_text = s_text
+                    py_text = ""
+
                 # synthesize tts for this sentence into a temp file
                 safe_name = f"tts_p{page_index}_s{s_idx}.mp3"
                 try:
                     # honor GUI selections if present, otherwise fall back to automatic choice
-                    selected_voice = VOICE_OPTIONS.get(voice_var.get()) if 'voice_var' in globals() else choose_voice(s_text)
+                    selected_voice = VOICE_OPTIONS.get(voice_var.get()) if 'voice_var' in globals() else choose_voice(ch_text)
                     try:
                         speed_percent = int(speed_var.get().strip('%')) if 'speed_var' in globals() else 100
                     except Exception:
@@ -273,7 +437,7 @@ def generate_video():
                     rate = f"{speed_percent - 100:+d}%"  # e.g., 80% -> -20%
 
                     async def synth():
-                        await edge_tts.Communicate(s_text, selected_voice, rate=rate).save(safe_name)
+                        await edge_tts.Communicate(ch_text, selected_voice, rate=rate).save(safe_name)
                     loop.run_until_complete(synth())
                     # measure duration
                     result = subprocess.run([
@@ -287,7 +451,10 @@ def generate_video():
                     safe_name = None
 
                 # convert duration to frame budget for this sentence
-                word_count = sent_word_counts[s_idx] if s_idx < len(sent_word_counts) else 1
+                # ensure word_count is at least 1 to avoid division/modulo by zero
+                word_count = sent_word_counts[s_idx] if s_idx < len(sent_word_counts) else 0
+                if word_count <= 0:
+                    word_count = 1
                 frames_for_sentence = max(1, int(round(audio_dur * fps)))
                 base = frames_for_sentence // word_count
                 rem = frames_for_sentence % word_count
@@ -309,20 +476,39 @@ def generate_video():
             for s_idx, sdraw in enumerate(top_sentence_draws):
                 f_s = sdraw['font']
                 for s_line in sdraw['lines']:
-                    for w in s_line.split():
-                        ww = get_text_dimensions(w + " ", f_s)[0]
-                        # if the word fits on current line, append it, otherwise push current and start new line
-                        if current_width == 0 or current_width + ww <= max_box_width:
-                            current_line.append({'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx})
-                            current_width += ww
-                        else:
-                            lines_render.append(current_line)
-                            current_line = [{'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx}]
-                            current_width = ww
-                        global_idx += 1
+                    if sdraw.get('is_chinese'):
+                        # treat each non-space character as a token for highlighting
+                        for ch in s_line:
+                            if ch.isspace():
+                                continue
+                            ww = get_text_dimensions(ch + " ", f_s)[0]
+                            if current_width == 0 or current_width + ww <= max_box_width:
+                                current_line.append({'word': ch, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx})
+                                current_width += ww
+                            else:
+                                lines_render.append(current_line)
+                                current_line = [{'word': ch, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx}]
+                                current_width = ww
+                            global_idx += 1
+                    else:
+                        for w in s_line.split():
+                            ww = get_text_dimensions(w + " ", f_s)[0]
+                            # if the word fits on current line, append it, otherwise push current and start new line
+                            if current_width == 0 or current_width + ww <= max_box_width:
+                                current_line.append({'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx})
+                                current_width += ww
+                            else:
+                                lines_render.append(current_line)
+                                current_line = [{'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx}]
+                                current_width = ww
+                            global_idx += 1
 
             if current_line:
                 lines_render.append(current_line)
+
+            # prepare pinyin lines for this page (draw after Chinese lines)
+            pinyin_lines = page.get('pinyin_lines', [])
+            p_font = ImageFont.truetype(font_path, max(10, base_font_size//2)) if pinyin_lines else None
 
             # Now render frames for each word using the per-word frame counts
             word_global_idx = 0
@@ -394,6 +580,14 @@ def generate_video():
                         xt += item['width']
 
                     yt += line_h + 10
+
+                # after drawing Chinese lines, draw pinyin lines (if any)
+                if pinyin_lines and p_font:
+                    for pline in pinyin_lines:
+                        lw, _ = get_text_dimensions(pline, p_font)
+                        draw.text((400 - lw//2, yt), pline, font=p_font, fill=(0, 0, 0))
+                        _, plh = get_text_dimensions("Ay", p_font)
+                        yt += plh + 6
 
                 final_frame = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
                 for _ in range(frames_for_word):
@@ -471,6 +665,10 @@ speed_menu.pack(side=tk.LEFT, padx=6)
 # Quick preview button (auditions selected voice+speed for short sample)
 preview_btn = tk.Button(audio_frame, text="Preview Voice", command=lambda: preview_voice(), bg="#2196F3", fg="white")
 preview_btn.pack(side=tk.RIGHT)
+
+# Button to check which Chinese font is selected and whether it renders glyphs
+check_font_btn = tk.Button(audio_frame, text="Check Chinese Font", command=lambda: check_chinese_font(), bg="#FF9800", fg="black")
+check_font_btn.pack(side=tk.RIGHT, padx=(8,0))
 
 # File selection
 tk.Label(root, text="Chọn file text để tạo video:", font=("Arial", 11)).pack(pady=6)
