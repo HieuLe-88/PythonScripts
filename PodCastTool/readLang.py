@@ -393,12 +393,14 @@ def generate_video():
             for s in top_sentences:
                 if isinstance(s, tuple):
                     # s = (chinese_text, pinyin)
-                    ch_text = s[0]
+                    ch_text, py_text = s
                     f_s, lines_s, lh_s, _ = fit_sentence_font(ch_text, chinese_font_path, base_font_size, max_box_width)
-                    top_sentence_draws.append({'font': f_s, 'lines': lines_s, 'line_h': lh_s, 'is_chinese': True})
+                    # split pinyin tokens (expect one token per character; if counts mismatch we'll fallback)
+                    p_tokens = [tok for tok in (py_text.split() if py_text else [])]
+                    top_sentence_draws.append({'font': f_s, 'font_size': getattr(f_s, 'size', base_font_size), 'lines': lines_s, 'line_h': lh_s, 'is_chinese': True, 'pinyin_tokens': p_tokens})
                 else:
                     f_s, lines_s, lh_s, _ = fit_sentence_font(s, font_path, base_font_size, max_box_width)
-                    top_sentence_draws.append({'font': f_s, 'lines': lines_s, 'line_h': lh_s, 'is_chinese': False})
+                    top_sentence_draws.append({'font': f_s, 'font_size': getattr(f_s, 'size', base_font_size), 'lines': lines_s, 'line_h': lh_s, 'is_chinese': False})
 
             # Build word list and sentence word counts (Chinese: per-character; others: per-space word)
             sent_word_counts = []
@@ -473,33 +475,44 @@ def generate_video():
             current_width = 0
             global_idx = 0
 
+            # track per-sentence character position so we can map pinyin tokens to characters
+            char_pos = {i: 0 for i in range(len(top_sentence_draws))}
             for s_idx, sdraw in enumerate(top_sentence_draws):
                 f_s = sdraw['font']
                 for s_line in sdraw['lines']:
                     if sdraw.get('is_chinese'):
-                        # treat each non-space character as a token for highlighting
+                        # treat each non-space character as a token for highlighting and attach pinyin if available
                         for ch in s_line:
                             if ch.isspace():
                                 continue
                             ww = get_text_dimensions(ch + " ", f_s)[0]
+                            # attempt to get corresponding pinyin token
+                            p_token = None
+                            p_tokens = sdraw.get('pinyin_tokens', [])
+                            pos = char_pos.get(s_idx, 0)
+                            if pos < len(p_tokens):
+                                p_token = p_tokens[pos]
+                            # build token with pinyin and font size for later use
+                            item = {'word': ch, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx, 'pinyin': p_token, 'font_size': sdraw.get('font_size', getattr(f_s, 'size', base_font_size))}
                             if current_width == 0 or current_width + ww <= max_box_width:
-                                current_line.append({'word': ch, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx})
+                                current_line.append(item)
                                 current_width += ww
                             else:
                                 lines_render.append(current_line)
-                                current_line = [{'word': ch, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx}]
+                                current_line = [item]
                                 current_width = ww
                             global_idx += 1
+                            char_pos[s_idx] = pos + 1
                     else:
                         for w in s_line.split():
                             ww = get_text_dimensions(w + " ", f_s)[0]
                             # if the word fits on current line, append it, otherwise push current and start new line
                             if current_width == 0 or current_width + ww <= max_box_width:
-                                current_line.append({'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx})
+                                current_line.append({'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx, 'font_size': getattr(f_s, 'size', base_font_size)})
                                 current_width += ww
                             else:
                                 lines_render.append(current_line)
-                                current_line = [{'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx}]
+                                current_line = [{'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx, 'font_size': getattr(f_s, 'size', base_font_size)}]
                                 current_width = ww
                             global_idx += 1
 
@@ -572,17 +585,31 @@ def generate_video():
                     if in_run:
                         draw.rectangle([run_x1 - padding, yt - 5, run_x2 + padding, yt + line_h + 5], fill=(173, 216, 230))
 
-                    # draw words with active word in red
+                    # draw words with active word in red and pinyin above each Chinese character when available
                     xt = 80
                     for item in line:
+                        # draw per-token pinyin (centered above the token) if available
+                        if item.get('pinyin'):
+                            p_text = item['pinyin']
+                            p_fs_size = max(10, int(item.get('font_size', base_font_size) * 0.45))
+                            try:
+                                p_fs = ImageFont.truetype(font_path, p_fs_size)
+                            except Exception:
+                                p_fs = ImageFont.truetype(font_path, max(10, base_font_size//2))
+                            p_w, p_h = get_text_dimensions(p_text, p_fs)
+                            p_x = xt + (item['width'] - p_w) / 2
+                            p_y = yt - p_h - 4
+                            draw.text((p_x, p_y), p_text, font=p_fs, fill=(0, 0, 0))
+
                         color = (255, 0, 0) if item['idx'] == w_idx else (0, 0, 0)
                         draw.text((xt, yt), item['word'], font=item['font'], fill=color)
                         xt += item['width']
 
                     yt += line_h + 10
 
-                # after drawing Chinese lines, draw pinyin lines (if any)
-                if pinyin_lines and p_font:
+                # if we have per-token pinyin we already drew it; otherwise fall back to page-level pinyin lines
+                any_token_pinyin = any(any(item.get('pinyin') for item in l) for l in lines_render)
+                if not any_token_pinyin and pinyin_lines and p_font:
                     for pline in pinyin_lines:
                         lw, _ = get_text_dimensions(pline, p_font)
                         draw.text((400 - lw//2, yt), pline, font=p_font, fill=(0, 0, 0))
