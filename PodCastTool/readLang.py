@@ -131,7 +131,8 @@ def normalize_pinyin_tokens(py_text, ch_text):
     if not py_text:
         return []
     tokens = [t for t in py_text.split() if t.strip()]
-    ch_count = sum(1 for ch in ch_text if not ch.isspace())
+    # Count only Hanzi characters for alignment (ignore punctuation, digits, etc.)
+    ch_count = sum(1 for ch in ch_text if re.match(r'[\u4e00-\u9fff]', ch))
     if ch_count == 0:
         return tokens
     if len(tokens) == ch_count:
@@ -220,7 +221,8 @@ def get_pinyin_for_chinese(ch_text):
     if not HAVE_PYPINYIN:
         return ''
     try:
-        toks = _pypinyin_pinyin(ch_text, style=_pypinyin_Style.TONE, errors='default')
+        # ignore non-Chinese characters so punctuation is not returned as pinyin tokens
+        toks = _pypinyin_pinyin(ch_text, style=_pypinyin_Style.TONE, errors='ignore')
         return ' '.join(t[0] for t in toks)
     except Exception:
         return ''
@@ -631,12 +633,18 @@ def generate_video():
                                 glyph_x0 = 0
                                 glyph_w = raw_w
 
-                            # attempt to get corresponding pinyin token
+                            # attempt to get corresponding pinyin token only for Hanzi
                             p_token = None
                             p_tokens = sdraw.get('pinyin_tokens', [])
                             pos = char_pos.get(s_idx, 0)
-                            if pos < len(p_tokens):
-                                p_token = p_tokens[pos]
+                            if re.match(r'[\u4e00-\u9fff]', ch):
+                                if pos < len(p_tokens):
+                                    p_token = p_tokens[pos]
+                                char_pos[s_idx] = pos + 1
+                            else:
+                                # punctuation or other non-Hanzi: do not consume a pinyin token
+                                p_token = None
+
                             # build token with pinyin and font size for later use; include raw_width, pad and glyph metrics
                             item = {'word': ch, 'font': f_s, 'font_path': sdraw.get('font_path'), 'idx': global_idx, 'width': ww, 'raw_width': raw_w, 'pad': pad, 'glyph_x0': glyph_x0, 'glyph_width': glyph_w, 's_idx': s_idx, 'pinyin': p_token, 'font_size': sdraw.get('font_size', getattr(f_s, 'size', base_font_size))}
                             if current_width == 0 or current_width + ww <= max_box_width:
@@ -647,7 +655,6 @@ def generate_video():
                                 current_line = [item]
                                 current_width = ww
                             global_idx += 1
-                            char_pos[s_idx] = pos + 1
                     else:
                         for w in s_line.split():
                             ww = get_text_dimensions(w + " ", f_s)[0]
