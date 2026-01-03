@@ -9,6 +9,20 @@ import asyncio
 import subprocess
 import edge_tts
 
+# GUI voice/speed options
+VOICE_OPTIONS = {
+    "Jenny (EN)": "en-US-JennyNeural",
+    "Guy (EN)": "en-US-GuyNeural",
+    "Alvaro (ES)": "es-ES-AlvaroNeural",
+    "Elvira (ES)": "es-ES-ElviraNeural",
+    "NamMinh (VI)": "vi-VN-NamMinhNeural",
+    "HoaiMy (VI)": "vi-VN-HoaiMyNeural",
+    "Yunxi (ZH)": "zh-CN-YunxiNeural",
+    "Yunjian (ZH)": "zh-CN-YunjianNeural",
+}
+SPEED_OPTIONS = ["100%", "90%", "80%", "70%", "60%", "50%"]
+
+
 # --- CÁC HÀM HỖ TRỢ XỬ LÝ VĂN BẢN ---
 
 def get_text_dimensions(text, font):
@@ -124,6 +138,29 @@ def select_file():
         entry_path.delete(0, tk.END)
         entry_path.insert(0, file_path)
 
+def preview_voice():
+    """Synthesize a short preview using the selected voice and speed and play it."""
+    try:
+        selected_voice = VOICE_OPTIONS.get(voice_var.get(), list(VOICE_OPTIONS.values())[0])
+        try:
+            speed_percent = int(speed_var.get().strip('%'))
+        except Exception:
+            speed_percent = 100
+        rate = f"{speed_percent - 100:+d}%"
+        preview_file = "tts_preview.mp3"
+        async def synth_preview():
+            await edge_tts.Communicate("This is a voice preview.", selected_voice, rate=rate).save(preview_file)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(synth_preview())
+        # play using default app (Windows) or open with system default
+        if os.name == 'nt':
+            os.startfile(preview_file)
+        else:
+            subprocess.run(["xdg-open", preview_file])
+    except Exception as e:
+        messagebox.showerror("Preview error", str(e))
+
 def generate_video():
     txt_path = entry_path.get()
     if not os.path.exists(txt_path):
@@ -227,9 +264,16 @@ def generate_video():
                 # synthesize tts for this sentence into a temp file
                 safe_name = f"tts_p{page_index}_s{s_idx}.mp3"
                 try:
-                    voice = choose_voice(s_text)
+                    # honor GUI selections if present, otherwise fall back to automatic choice
+                    selected_voice = VOICE_OPTIONS.get(voice_var.get()) if 'voice_var' in globals() else choose_voice(s_text)
+                    try:
+                        speed_percent = int(speed_var.get().strip('%')) if 'speed_var' in globals() else 100
+                    except Exception:
+                        speed_percent = 100
+                    rate = f"{speed_percent - 100:+d}%"  # e.g., 80% -> -20%
+
                     async def synth():
-                        await edge_tts.Communicate(s_text, voice).save(safe_name)
+                        await edge_tts.Communicate(s_text, selected_voice, rate=rate).save(safe_name)
                     loop.run_until_complete(synth())
                     # measure duration
                     result = subprocess.run([
@@ -408,9 +452,28 @@ def generate_video():
 
 root = tk.Tk()
 root.title("Video Pagination Tool")
-root.geometry("500x250")
+root.geometry("700x380")
 
-tk.Label(root, text="Chọn file text để tạo video:", font=("Arial", 11)).pack(pady=20)
+# Audio settings in a clear boxed area so it's obvious
+audio_frame = tk.LabelFrame(root, text="Audio Settings", padx=10, pady=8)
+audio_frame.pack(pady=10, fill='x', padx=20)
+
+tk.Label(audio_frame, text="Voice:").pack(side=tk.LEFT)
+voice_var = tk.StringVar(value=list(VOICE_OPTIONS.keys())[0])
+voice_menu = tk.OptionMenu(audio_frame, voice_var, *VOICE_OPTIONS.keys())
+voice_menu.pack(side=tk.LEFT, padx=(6, 20))
+
+tk.Label(audio_frame, text="Speed:").pack(side=tk.LEFT)
+speed_var = tk.StringVar(value=SPEED_OPTIONS[0])
+speed_menu = tk.OptionMenu(audio_frame, speed_var, *SPEED_OPTIONS)
+speed_menu.pack(side=tk.LEFT, padx=6)
+
+# Quick preview button (auditions selected voice+speed for short sample)
+preview_btn = tk.Button(audio_frame, text="Preview Voice", command=lambda: preview_voice(), bg="#2196F3", fg="white")
+preview_btn.pack(side=tk.RIGHT)
+
+# File selection
+tk.Label(root, text="Chọn file text để tạo video:", font=("Arial", 11)).pack(pady=6)
 
 frame_row = tk.Frame(root)
 frame_row.pack(fill='x', padx=30)
