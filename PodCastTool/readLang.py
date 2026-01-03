@@ -5,6 +5,9 @@ from tkinter import filedialog, messagebox
 from PIL import Image, ImageDraw, ImageFont
 import os
 import re 
+import asyncio
+import subprocess
+import edge_tts
 
 # --- CÁC HÀM HỖ TRỢ XỬ LÝ VĂN BẢN ---
 
@@ -179,16 +182,31 @@ def generate_video():
         base_font_size = 32
         pages_data = wrap_and_paginate_with_mapping(sentence_pairs, font_path, base_font_size, 640, 165)
         
-        file_name = "output_map_function.mp4"
+        # Prepare video + per-sentence TTS audio so the final mp4 includes speech and accurate timings
         width, height = 800, 450
-        fps, frames_per_word = 24, 12 
-        out = cv2.VideoWriter(file_name, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+        fps = 24
+        default_frames_per_word = 12  # fallback if TTS/duration fails
+
+        # Helper to choose voice
+        def choose_voice(text):
+            if re.search(r"[áéíóúñüÁÉÍÓÚÑÜ]|\b(hola|estoy|gracias|mundo)\b", text.lower()):
+                return 'es-ES-AlvaroNeural'
+            return 'en-US-JennyNeural'
+
+        # We'll generate per-sentence TTS files and durations, then concatenate them into a single audio for muxing
+        tts_files = []
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        temp_video = "output_map_function_noaudio.mp4"
+        final_video = "output_map_function.mp4"
+        out = cv2.VideoWriter(temp_video, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
 
         # base font size (keep same as used earlier)
         base_font_size = 32
         max_box_width = 640  # same width used for wrapping top sentences
 
-        for page in pages_data:
+        for page_index, page in enumerate(pages_data):
             top_sentences = page.get('top_sentences', [])
             bottom_sentences = page.get('bottom_sentences', [])
 
@@ -201,16 +219,78 @@ def generate_video():
             # Build word list and sentence word counts
             sent_word_counts = [sum(len(line.split()) for line in sdraw['lines']) for sdraw in top_sentence_draws]
             total_top_words = sum(sent_word_counts)
-            for target_idx in range(total_top_words):
-                # Find which sentence contains the active word
+
+            # --- Synthesize per-sentence TTS and compute frames-per-word distribution for this page ---
+            page_word_frame_counts = []
+            page_tts_files = []
+            for s_idx, s_text in enumerate(top_sentences):
+                # synthesize tts for this sentence into a temp file
+                safe_name = f"tts_p{page_index}_s{s_idx}.mp3"
+                try:
+                    voice = choose_voice(s_text)
+                    async def synth():
+                        await edge_tts.Communicate(s_text, voice).save(safe_name)
+                    loop.run_until_complete(synth())
+                    # measure duration
+                    result = subprocess.run([
+                        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+                        "-of", "default=noprint_wrappers=1:nokey=1", safe_name
+                    ], stdout=subprocess.PIPE, text=True, check=True)
+                    audio_dur = float(result.stdout.strip())
+                except Exception:
+                    # fallback duration estimation proportional to default frames_per_word
+                    audio_dur = max(0.1, (sent_word_counts[s_idx] * default_frames_per_word) / fps)
+                    safe_name = None
+
+                # convert duration to frame budget for this sentence
+                word_count = sent_word_counts[s_idx] if s_idx < len(sent_word_counts) else 1
+                frames_for_sentence = max(1, int(round(audio_dur * fps)))
+                base = frames_for_sentence // word_count
+                rem = frames_for_sentence % word_count
+                for w_i in range(word_count):
+                    page_word_frame_counts.append(base + (1 if w_i < rem else 0))
+
+                if safe_name:
+                    page_tts_files.append(safe_name)
+
+            # extend global tts list in order
+            tts_files.extend(page_tts_files)
+
+            # --- Build packed lines (allow multiple sentences on one line when space permits) ---
+            lines_render = []
+            current_line = []
+            current_width = 0
+            global_idx = 0
+
+            for s_idx, sdraw in enumerate(top_sentence_draws):
+                f_s = sdraw['font']
+                for s_line in sdraw['lines']:
+                    for w in s_line.split():
+                        ww = get_text_dimensions(w + " ", f_s)[0]
+                        # if the word fits on current line, append it, otherwise push current and start new line
+                        if current_width == 0 or current_width + ww <= max_box_width:
+                            current_line.append({'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx})
+                            current_width += ww
+                        else:
+                            lines_render.append(current_line)
+                            current_line = [{'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx}]
+                            current_width = ww
+                        global_idx += 1
+
+            if current_line:
+                lines_render.append(current_line)
+
+            # Now render frames for each word using the per-word frame counts
+            word_global_idx = 0
+            for w_idx, frames_for_word in enumerate(page_word_frame_counts):
+                # determine which sentence the word belongs to (for bottom box)
                 cum = 0
                 sent_idx = 0
                 for i, cnt in enumerate(sent_word_counts):
-                    if target_idx < cum + cnt:
+                    if w_idx < cum + cnt:
                         sent_idx = i
                         break
                     cum += cnt
-                # corresponding bottom sentence (if any)
                 current_box_bottom_text = bottom_sentences[sent_idx] if sent_idx < len(bottom_sentences) else ""
 
                 base_frame = np.full((height, width, 3), (40, 40, 40), dtype=np.uint8)
@@ -231,37 +311,11 @@ def generate_video():
                         draw.text((400 - lw//2, yb), line, font=f_b, fill=(0, 0, 0))
                         yb += bh + 10
 
-                # --- draw blue background for the active sentence (per-word runs) ---
-                # compute start/end word index for active sentence
+                # compute start/end word index for active sentence's blue background
                 start_word = sum(sent_word_counts[:sent_idx]) if sent_word_counts else 0
                 end_word = start_word + sent_word_counts[sent_idx] - 1 if sent_idx < len(sent_word_counts) else start_word
 
-                # --- Build packed lines (allow multiple sentences on one line when space permits) ---
-                # --- Build packed lines (word-by-word, so sentences continue on same line when possible) ---
-                lines_render = []
-                current_line = []
-                current_width = 0
-                global_idx = 0
-
-                for s_idx, sdraw in enumerate(top_sentence_draws):
-                    f_s = sdraw['font']
-                    for s_line in sdraw['lines']:
-                        for w in s_line.split():
-                            ww = get_text_dimensions(w + " ", f_s)[0]
-                            # if the word fits on current line, append it, otherwise push current and start new line
-                            if current_width == 0 or current_width + ww <= max_box_width:
-                                current_line.append({'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx})
-                                current_width += ww
-                            else:
-                                lines_render.append(current_line)
-                                current_line = [{'word': w, 'font': f_s, 'idx': global_idx, 'width': ww, 's_idx': s_idx}]
-                                current_width = ww
-                            global_idx += 1
-
-                if current_line:
-                    lines_render.append(current_line)
-
-                # --- Draw packed lines: blue background runs and then text (active word red) ---
+                # draw packed lines: blue background runs and text (active word red)
                 yt = 70
                 for line in lines_render:
                     # line height = max font line height in this line
@@ -291,19 +345,62 @@ def generate_video():
                     # draw words with active word in red
                     xt = 80
                     for item in line:
-                        color = (255, 0, 0) if item['idx'] == target_idx else (0, 0, 0)
+                        color = (255, 0, 0) if item['idx'] == w_idx else (0, 0, 0)
                         draw.text((xt, yt), item['word'], font=item['font'], fill=color)
                         xt += item['width']
 
                     yt += line_h + 10
 
                 final_frame = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
-                for _ in range(frames_per_word):
+                for _ in range(frames_for_word):
                     out.write(final_frame)
+                word_global_idx += 1
 
         out.release()
-        messagebox.showinfo("Thành công", "Video Mapping Function hoàn tất!")
-        if os.name == 'nt': os.startfile(file_name)
+        final_path = temp_video
+
+        # If we generated per-sentence TTS files, concatenate into one audio and mux
+        tts_audio = None
+        if tts_files:
+            concat_list = "tts_concat_list.txt"
+            try:
+                with open(concat_list, "w", encoding="utf-8") as lf:
+                    for t in tts_files:
+                        lf.write(f"file '{os.path.abspath(t)}'\n")
+                tts_audio = "tts_output.mp3"
+                subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list, "-c", "copy", tts_audio], check=True)
+            except Exception as e:
+                messagebox.showwarning("Lưu ý", f"Không thể ghép âm thanh: {e}\nVideo sẽ không có âm thanh.")
+            finally:
+                try: os.remove(concat_list)
+                except: pass
+
+        if tts_audio and os.path.exists(tts_audio):
+            try:
+                subprocess.run([
+                    "ffmpeg", "-y", "-i", temp_video, "-i", tts_audio,
+                    "-c:v", "copy", "-c:a", "aac", "-map", "0:v:0", "-map", "1:a:0", "-shortest", final_video
+                ], check=True)
+                try:
+                    os.remove(temp_video)
+                except:
+                    pass
+                final_path = final_video
+            except Exception as e:
+                messagebox.showwarning("Lưu ý", f"Không thể ghép âm thanh: {e}\nVideo không có âm thanh sẽ được sử dụng.")
+
+        # cleanup per-sentence tts tmp files
+        for f in tts_files:
+            try:
+                if os.path.exists(f): os.remove(f)
+            except: pass
+        # cleanup combined tts if generated
+        try:
+            if tts_audio and os.path.exists(tts_audio): pass
+        except: pass
+
+        messagebox.showinfo("Thành công", f"Video Mapping Function hoàn tất!\nTệp: {final_path}")
+        if os.name == 'nt': os.startfile(final_path)
     except Exception as e:
         messagebox.showerror("Lỗi", str(e))
 
