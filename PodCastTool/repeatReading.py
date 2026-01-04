@@ -89,7 +89,6 @@ class VideoGenerator:
     def make_silence(self, duration):
         return AudioClip(lambda t: [0, 0], duration=max(0.1, duration), fps=44100)
 
-    # RESTORED MISSING FUNCTION
     async def generate_audio(self, text, voice_str, speed_str, filename):
         speed_val = int(speed_str.replace("%", ""))
         rate_val = speed_val - 100
@@ -100,9 +99,24 @@ class VideoGenerator:
         await communicate.save(filename)
 
     def create_frame(self, es_text, en_text, width=1280, height=720):
-        # Background: Yellow
-        img = Image.new('RGB', (width, height), color=(255, 255, 0))
-        
+        # Overall Background (Seashell White)
+        img = Image.new('RGB', (width, height), color=(255, 245, 240))
+        draw = ImageDraw.Draw(img)
+
+        # Box Positioning
+        margin_x = 80
+        box_width = width - (margin_x * 2)
+        box_height = 220
+
+        # Spanish Box (Rose White)
+        es_box = [margin_x, 100, margin_x + box_width, 100 + box_height]
+        draw.rounded_rectangle(es_box, radius=25, fill=(255, 240, 235), outline=(0, 128, 0), width=4)
+
+        # English Box (Periwinkle Blue)
+        en_box = [margin_x, 400, margin_x + box_width, 400 + box_height]
+        draw.rounded_rectangle(en_box, radius=25, fill=(178, 191, 255), outline=(50, 50, 50), width=2)
+
+        # Logo Logic
         if self.logo_path.get() and os.path.exists(self.logo_path.get()):
             try:
                 logo = Image.open(self.logo_path.get()).convert("RGBA")
@@ -113,23 +127,23 @@ class VideoGenerator:
                 img.paste(logo, (width - logo_w - 25, 25), logo)
             except: pass
 
-        draw = ImageDraw.Draw(img)
-        
-        # Font Sizes: Spanish is 1.5x larger (67px) than English (45px)
-        en_size = 45
+        # Fonts
+        en_size = 48
         es_size = int(en_size * 1.5)
-
         try:
             es_font = ImageFont.truetype("arial.ttf", es_size)
             en_font = ImageFont.truetype("arial.ttf", en_size)
         except:
             es_font = ImageFont.load_default()
             en_font = ImageFont.load_default()
-            
-        # Spanish: Green | English: Black
-        draw.text((width//2, height//3), es_text, fill=(0, 128, 0), font=es_font, anchor="mm")
-        draw.text((width//2, 2*height//3), en_text, fill="black", font=en_font, anchor="mm")
-        
+
+        # Center Text in Boxes
+        es_pos = (es_box[0] + box_width//2, es_box[1] + box_height//2)
+        en_pos = (en_box[0] + box_width//2, en_box[1] + box_height//2)
+
+        draw.text(es_pos, es_text, fill=(0, 100, 0), font=es_font, anchor="mm")
+        draw.text(en_pos, en_text, fill="black", font=en_font, anchor="mm")
+
         return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
     def process_video(self, file_path):
