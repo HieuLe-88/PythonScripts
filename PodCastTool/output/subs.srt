@@ -1,0 +1,20 @@
+1
+00:00:00,000 --> 00:00:04,631
+{\fs14}Sí, reservar vuelos y alojamiento es importante.\N{\fs12}Yes, booking flights and accommodation is important.
+
+2
+00:00:04,631 --> 00:00:08,903
+{\fs17}Además, quiero probar la comida local.\N{\fs15}Also, I want to try the local food.
+
+3
+00:00:08,903 --> 00:00:13,176
+{\fs14}Yo también, la gastronomía es fundamental.\N{\fs12}Me too, gastronomy is essential.
+
+4
+00:00:13,176 --> 00:00:17,231
+{\fs14}Entonces hagamos un itinerario detallado.\N{\fs12}Then let's make a detailed itinerary.
+
+5
+00:00:17,231 --> 00:00:21,047
+{\fs17}De acuerdo, estoy muy emocionada.\N{\fs15}Alright, I'm very excited.
+

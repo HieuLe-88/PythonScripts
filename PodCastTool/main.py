@@ -12,7 +12,7 @@ VIDEO_SIZE = "1920x1080"
 OUTPUT_DIR = "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Đường dẫn font (Hãy đảm bảo đường dẫn này đúng trên máy bạn)
+# Đường dẫn font (Hãy đảm bảo các font này tồn tại trên máy bạn)
 FONT_LATIN = "C\\:/Windows/Fonts/arial.ttf"
 FONT_CHINESE = "C\\:/Users/USER/AppData/Local/Microsoft/Windows/Fonts/NotoSansCJKsc-Regular.otf"
 
@@ -36,51 +36,20 @@ LANG_VOICES = {
     }
 }
 
-# DANH SÁCH 5 DẠNG WAVEFORM
-# DANH SÁCH ~10 DẠNG WAVEFORM
 WAVE_MODES = {
-    # 1. Dạng vạch cơ bản
-    "Dạng vạch (Line)": 
-        "showwaves=s=800x200:mode=line:colors=white:draw=full",
-
-    # 2. Dạng cột đặc (peak to peak)
-    "Dạng cột đặc (P2P)": 
-        "showwaves=s=800x200:mode=p2p:colors=white:draw=full",
-
-    # 3. Dạng cột đối xứng qua trục giữa
-    "Dạng đối xứng (Center line)": 
-        "showwaves=s=800x200:mode=cline:colors=white:draw=full",
-
-    # 4. Dạng điểm (xung điện)
-    "Dạng điểm (Point)": 
-        "showwaves=s=800x200:mode=point:colors=white",
-
-    # 5. Dạng sóng nét mảnh (line + no fill)
-    "Dạng sóng mảnh": 
-        "showwaves=s=800x200:mode=line:colors=white:draw=none",
-
-    # 6. Dạng sóng mờ (alpha thấp)
-    "Dạng sóng mờ": 
-        "showwaves=s=800x200:mode=line:colors=white@0.4:draw=full",
-
-    # 7. Dạng sóng dày (double line)
-    "Dạng sóng dày": 
-        "showwaves=s=800x200:mode=line:colors=white,white:draw=full",
-
-    # 8. Dạng thanh âm lượng đơn giản
-    "Dạng thanh âm lượng (Bars)": 
-        "showvolume=f=0.5:w=800:h=200:t=0:b=4:v=0:c=white",
-
-    # 9. Dạng thanh âm lượng mịn (smooth)
-    "Dạng thanh âm lượng mịn": 
-        "showvolume=f=0.1:w=800:h=200:t=0:b=2:v=0:c=white",
-
-    # 10. Dạng thanh âm lượng
-    "Dạng thanh âm lượng": 
-        "showwaves=s=800x200:mode=line:colors=white:draw=full[wave]"
+    "Dạng vạch (Line)": "showwaves=s=800x200:mode=line:colors=white:draw=full",
+    "Dạng cột đặc (P2P)": "showwaves=s=800x200:mode=p2p:colors=white:draw=full",
+    "Dạng đối xứng (Center line)": "showwaves=s=800x200:mode=cline:colors=white:draw=full",
+    "Dạng điểm (Point)": "showwaves=s=800x200:mode=point:colors=white",
+    "Dạng sóng mảnh": "showwaves=s=800x200:mode=line:colors=white:draw=none",
+    "Dạng sóng mờ": "showwaves=s=800x200:mode=line:colors=white@0.4:draw=full",
+    "Dạng sóng dày": "showwaves=s=800x200:mode=line:colors=white,white:draw=full",
+    "Dạng thanh âm lượng (Bars)": "showvolume=f=0.5:w=800:h=200:t=0:b=4:v=0:c=white",
+    "Dạng thanh âm lượng mịn": "showvolume=f=0.1:w=800:h=200:t=0:b=2:v=0:c=white",
 }
 
 selected_bg = None
+selected_logo = None
 
 # ---------- HELPER FUNCTIONS ----------
 def get_seconds(time_str):
@@ -151,24 +120,45 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitle
     sub_style = (f"subtitles='{srt_path}':force_style='Fontname={current_font},FontSize=16,"
                  f"PrimaryColour=&HFFFFFF,BorderStyle=3,OutlineColour=&H99333333,Alignment=2,MarginV=40'")
 
-    # Lấy filter waveform dựa trên lựa chọn GUI
     wave_filter = WAVE_MODES[wave_mode_key]
 
+    # --- XÂY DỰNG CHUỖI FILTER PHỨC TẠP ---
+    # Đầu vào 0: Video nền
+    # Đầu vào 1: Audio (để tạo sóng)
+    # Đầu vào 2 (nếu có): Logo
+    
+    # 1. Xử lý nền và sóng âm
     filter_chain = (
         f"[0:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080[bg];"
         f"[1:a]{wave_filter}[wave];"
-        f"[bg][wave]overlay=(W-w)/2:600[v_wave];"
+        f"[bg][wave]overlay=(W-w)/2:600[v_base];"
     )
 
-    if show_subtitles: filter_chain += f"[v_wave]{sub_style},fps=12[v]"
-    else: filter_chain += "[v_wave]fps=12[v]"
+    logo_input = []
+    current_v = "[v_base]"
 
+    # 2. Xử lý chèn Logo nếu được chọn
+    # iw*0.25 = 25% chiều rộng ảnh gốc. W-w-50:50 = cách lề phải 50px, lề trên 50px
+    if selected_logo:
+        logo_input = ["-i", selected_logo]
+        filter_chain += f"[2:v]scale=iw*0.25:-1[logo_scaled];"
+        filter_chain += f"{current_v}[logo_scaled]overlay=W-w-50:50[v_logo];"
+        current_v = "[v_logo]"
+
+    # 3. Xử lý phụ đề
+    if show_subtitles: 
+        filter_chain += f"{current_v}{sub_style},fps=5[v]"
+    else: 
+        filter_chain += f"{current_v}fps=5[v]"
+
+    # Cấu hình Input cho FFmpeg
     bg_input = ["-f", "lavfi", "-i", "color=c=black:s=1920x1080"]
     if selected_bg:
         if selected_bg.lower().endswith((".mp4", ".mov")): bg_input = ["-stream_loop", "-1", "-i", selected_bg]
         else: bg_input = ["-loop", "1", "-i", selected_bg]
 
-    cmd = ["ffmpeg", "-y", *bg_input, "-i", full_audio, "-filter_complex", filter_chain,
+    cmd = ["ffmpeg", "-y", *bg_input, "-i", full_audio, *logo_input, 
+           "-filter_complex", filter_chain,
            "-map", "[v]", "-map", "1:a", "-c:v", "libx264", "-preset", "ultrafast",
            "-t", str(total_dur), os.path.join(OUTPUT_DIR, f"podcast_{lang}.mp4")]
     
@@ -184,14 +174,13 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitle
             progress_callback(min(int((current_seconds / total_dur) * 100), 100))
     process.wait()
 
-    # Dọn dẹp file
+    # Dọn dẹp
     try:
         for audio in audio_files:
             if os.path.exists(audio): os.remove(audio)
         if os.path.exists(full_audio): os.remove(full_audio)
         if os.path.exists(list_path): os.remove(list_path)
     except: pass
-
 
     return cmd[-1]
 
@@ -238,10 +227,17 @@ def choose_background():
         selected_bg = path
         bg_label.config(text=os.path.basename(path))
 
+def choose_logo():
+    global selected_logo
+    path = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg *.bmp")])
+    if path:
+        selected_logo = path
+        logo_label.config(text=os.path.basename(path))
+
 # ---------- GUI LAYOUT ----------
 root = tk.Tk()
-root.title("AI Podcast Generator - Multi-Waveform")
-root.geometry("750x700")
+root.title("AI Podcast Generator - Logo & Waveform")
+root.geometry("750x750")
 
 cfg_frame = tk.LabelFrame(root, text=" Cấu hình ", padx=10, pady=10)
 cfg_frame.pack(pady=10, fill="x", padx=20)
@@ -256,7 +252,6 @@ voice_pack_var = tk.StringVar()
 voice_menu = tk.OptionMenu(cfg_frame, voice_pack_var, "")
 voice_menu.grid(row=0, column=3, sticky="w")
 
-# THÊM DROPDOWN CHỌN DẠNG WAVEFORM
 tk.Label(cfg_frame, text="Dạng Waveform:").grid(row=1, column=0, pady=5, sticky="w")
 wave_var = tk.StringVar(value="Dạng vạch (Line)")
 tk.OptionMenu(cfg_frame, wave_var, *WAVE_MODES.keys()).grid(row=1, column=1, sticky="w")
@@ -270,11 +265,19 @@ tk.Checkbutton(cfg_frame, text="Hiện Subtitle", variable=show_sub_var).grid(ro
 
 update_voice_options()
 
-bg_frame = tk.Frame(root)
-bg_frame.pack(pady=5)
-tk.Button(bg_frame, text="Chọn Nền (Ảnh/Video)", command=choose_background).pack(side=tk.LEFT)
-bg_label = tk.Label(bg_frame, text="Chưa chọn nền", fg="blue", padx=10)
-bg_label.pack(side=tk.LEFT)
+# Frame chọn File Nền & Logo
+file_frame = tk.Frame(root)
+file_frame.pack(pady=5)
+
+# Background
+tk.Button(file_frame, text="Chọn Nền (Ảnh/Video)", command=choose_background).grid(row=0, column=0, padx=5)
+bg_label = tk.Label(file_frame, text="Chưa chọn nền", fg="blue", width=25, anchor="w")
+bg_label.grid(row=0, column=1)
+
+# Logo
+tk.Button(file_frame, text="Chọn Logo (25% size)", command=choose_logo).grid(row=1, column=0, padx=5, pady=5)
+logo_label = tk.Label(file_frame, text="Chưa chọn logo", fg="green", width=25, anchor="w")
+logo_label.grid(row=1, column=1)
 
 text_box = tk.Text(root, width=85, height=12, font=("Consolas", 10))
 text_box.pack(pady=10, padx=20)
