@@ -186,11 +186,18 @@ class VideoGenerator:
             data = self.parse_line(line)
             if not data: continue
 
+            # --- AUDIO CLEANING STEP ---
+            # We remove punctuation ONLY for the audio generation so it's not read aloud
+            # This regex replaces ?, /, ., (, ), and other symbols with an empty space
+            clean_es_audio = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
+            clean_en_audio = re.sub(r'[?/.()¿¡!]', '', data['en_text'])
+
             es_temp = f"es_temp_{i}.mp3"
             en_temp = f"en_temp_{i}.mp3"
             
-            asyncio.run(self.generate_audio(data['es_text'], self.selected_voice.get(), self.selected_speed.get(), es_temp))
-            asyncio.run(self.generate_audio(data['en_text'], "en-US-GuyNeural", self.selected_speed.get(), en_temp))
+            # Use the 'clean' versions for audio generation
+            asyncio.run(self.generate_audio(clean_es_audio, self.selected_voice.get(), self.selected_speed.get(), es_temp))
+            asyncio.run(self.generate_audio(clean_en_audio, "en-US-GuyNeural", self.selected_speed.get(), en_temp))
 
             es_audio = AudioFileClip(es_temp)
             en_audio = AudioFileClip(en_temp)
@@ -208,6 +215,9 @@ class VideoGenerator:
             temp_avi = f"video_temp_{i}.avi"
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
             out = cv2.VideoWriter(temp_avi, fourcc, fps, (1280, 720))
+            
+            # --- VISUAL STEP ---
+            # We use the ORIGINAL 'data' text for the frame so the punctuation STILL SHOWS
             frame = self.create_frame(data['es_text'], data['en_text'])
             
             for _ in range(int(final_audio.duration * fps) + 1):
