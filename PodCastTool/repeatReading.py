@@ -93,10 +93,27 @@ class VideoGenerator:
         speed_val = int(speed_str.replace("%", ""))
         rate_val = speed_val - 100
         rate_str = f"{rate_val:+d}%" 
-        
         voice = voice_str.split(" ")[0]
         communicate = edge_tts.Communicate(text, voice, rate=rate_str)
         await communicate.save(filename)
+
+    def wrap_text(self, text, font, max_width):
+        """Helper to split text into lines that fit the box width."""
+        words = text.split(' ')
+        lines = []
+        current_line = []
+
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            # getbbox returns (left, top, right, bottom)
+            w = font.getbbox(test_line)[2]
+            if w <= max_width:
+                current_line.append(word)
+            else:
+                lines.append(' '.join(current_line))
+                current_line = [word]
+        lines.append(' '.join(current_line))
+        return '\n'.join(lines)
 
     def create_frame(self, es_text, en_text, width=1280, height=720):
         # Overall Background (Seashell White)
@@ -106,26 +123,16 @@ class VideoGenerator:
         # Box Positioning
         margin_x = 80
         box_width = width - (margin_x * 2)
-        box_height = 220
+        box_height = 240 # Increased height slightly for multi-line support
+        text_padding = 40 # Space inside the box so text doesn't touch the borders
 
         # Spanish Box (Rose White)
-        es_box = [margin_x, 100, margin_x + box_width, 100 + box_height]
+        es_box = [margin_x, 80, margin_x + box_width, 80 + box_height]
         draw.rounded_rectangle(es_box, radius=25, fill=(255, 240, 235), outline=(0, 128, 0), width=4)
 
         # English Box (Periwinkle Blue)
-        en_box = [margin_x, 400, margin_x + box_width, 400 + box_height]
+        en_box = [margin_x, 380, margin_x + box_width, 380 + box_height]
         draw.rounded_rectangle(en_box, radius=25, fill=(178, 191, 255), outline=(50, 50, 50), width=2)
-
-        # Logo Logic
-        if self.logo_path.get() and os.path.exists(self.logo_path.get()):
-            try:
-                logo = Image.open(self.logo_path.get()).convert("RGBA")
-                logo_w = int(width * 0.08)
-                w_percent = (logo_w / float(logo.size[0]))
-                logo_h = int((float(logo.size[1]) * float(w_percent)))
-                logo = logo.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
-                img.paste(logo, (width - logo_w - 25, 25), logo)
-            except: pass
 
         # Fonts
         en_size = 48
@@ -137,12 +144,28 @@ class VideoGenerator:
             es_font = ImageFont.load_default()
             en_font = ImageFont.load_default()
 
-        # Center Text in Boxes
+        # Wrap Text Logic
+        wrapped_es = self.wrap_text(es_text, es_font, box_width - text_padding)
+        wrapped_en = self.wrap_text(en_text, en_font, box_width - text_padding)
+
+        # Center Wrapped Text in Boxes
         es_pos = (es_box[0] + box_width//2, es_box[1] + box_height//2)
         en_pos = (en_box[0] + box_width//2, en_box[1] + box_height//2)
 
-        draw.text(es_pos, es_text, fill=(0, 100, 0), font=es_font, anchor="mm")
-        draw.text(en_pos, en_text, fill="black", font=en_font, anchor="mm")
+        # Draw text with align="center" for multi-line centering
+        draw.text(es_pos, wrapped_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
+        draw.text(en_pos, wrapped_en, fill="black", font=en_font, anchor="mm", align="center")
+
+        # Logo Logic (Applied last to be on top)
+        if self.logo_path.get() and os.path.exists(self.logo_path.get()):
+            try:
+                logo = Image.open(self.logo_path.get()).convert("RGBA")
+                logo_w = int(width * 0.08)
+                w_percent = (logo_w / float(logo.size[0]))
+                logo_h = int((float(logo.size[1]) * float(w_percent)))
+                logo = logo.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
+                img.paste(logo, (width - logo_w - 25, 20), logo)
+            except: pass
 
         return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
@@ -153,7 +176,7 @@ class VideoGenerator:
         all_video_segments = []
         fps = 5 
         out_folder = self.output_dir.get()
-        final_path = os.path.join(out_folder, "pattern_lesson_branded.mp4")
+        final_path = os.path.join(out_folder, "pattern_lesson_wrapped.mp4")
 
         for i, line in enumerate(lines):
             data = self.parse_line(line)
