@@ -89,10 +89,20 @@ class VideoGenerator:
     def make_silence(self, duration):
         return AudioClip(lambda t: [0, 0], duration=max(0.1, duration), fps=44100)
 
-    def create_frame(self, es_text, en_text, width=1280, height=720):
-        img = Image.new('RGB', (width, height), color=(20, 20, 30))
+    # RESTORED MISSING FUNCTION
+    async def generate_audio(self, text, voice_str, speed_str, filename):
+        speed_val = int(speed_str.replace("%", ""))
+        rate_val = speed_val - 100
+        rate_str = f"{rate_val:+d}%" 
         
-        # Logo Logic (8% Width)
+        voice = voice_str.split(" ")[0]
+        communicate = edge_tts.Communicate(text, voice, rate=rate_str)
+        await communicate.save(filename)
+
+    def create_frame(self, es_text, en_text, width=1280, height=720):
+        # Background: Yellow
+        img = Image.new('RGB', (width, height), color=(255, 255, 0))
+        
         if self.logo_path.get() and os.path.exists(self.logo_path.get()):
             try:
                 logo = Image.open(self.logo_path.get()).convert("RGBA")
@@ -100,31 +110,27 @@ class VideoGenerator:
                 w_percent = (logo_w / float(logo.size[0]))
                 logo_h = int((float(logo.size[1]) * float(w_percent)))
                 logo = logo.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
-                pos_x = width - logo_w - 25
-                pos_y = 25
-                img.paste(logo, (pos_x, pos_y), logo)
-            except Exception:
-                pass
+                img.paste(logo, (width - logo_w - 25, 25), logo)
+            except: pass
 
         draw = ImageDraw.Draw(img)
-        try:
-            font = ImageFont.truetype("arial.ttf", 45)
-        except:
-            font = ImageFont.load_default()
-            
-        draw.text((width//2, height//3), es_text, fill="white", font=font, anchor="mm")
-        draw.text((width//2, 2*height//3), en_text, fill="yellow", font=font, anchor="mm")
-        return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-
-    async def generate_audio(self, text, voice_str, speed_str, filename):
-        speed_val = int(speed_str.replace("%", ""))
-        # Fix for Invalid Rate error: use +0% for 100 speed
-        rate_val = speed_val - 100
-        rate_str = f"{rate_val:+d}%" 
         
-        voice = voice_str.split(" ")[0]
-        communicate = edge_tts.Communicate(text, voice, rate=rate_str)
-        await communicate.save(filename)
+        # Font Sizes: Spanish is 1.5x larger (67px) than English (45px)
+        en_size = 45
+        es_size = int(en_size * 1.5)
+
+        try:
+            es_font = ImageFont.truetype("arial.ttf", es_size)
+            en_font = ImageFont.truetype("arial.ttf", en_size)
+        except:
+            es_font = ImageFont.load_default()
+            en_font = ImageFont.load_default()
+            
+        # Spanish: Green | English: Black
+        draw.text((width//2, height//3), es_text, fill=(0, 128, 0), font=es_font, anchor="mm")
+        draw.text((width//2, 2*height//3), en_text, fill="black", font=en_font, anchor="mm")
+        
+        return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
     def process_video(self, file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -148,19 +154,14 @@ class VideoGenerator:
             es_audio = AudioFileClip(es_temp)
             en_audio = AudioFileClip(en_temp)
 
-            line_audio_list = []
-            line_audio_list.append(es_audio)
-            line_audio_list.append(self.make_silence(0.5)) 
-            line_audio_list.append(self.make_silence(1.3))
+            line_audio_list = [es_audio, self.make_silence(0.5), self.make_silence(1.3)]
             
             for _ in range(data['en_count']):
-                line_audio_list.append(en_audio)
-                line_audio_list.append(self.make_silence(0.5))
+                line_audio_list.extend([en_audio, self.make_silence(0.5)])
                 
             if data['es_count'] > 1:
                 for _ in range(data['es_count'] - 1):
-                    line_audio_list.append(es_audio)
-                    line_audio_list.append(self.make_silence(0.5))
+                    line_audio_list.extend([es_audio, self.make_silence(0.5)])
             
             final_audio = concatenate_audioclips(line_audio_list)
             temp_avi = f"video_temp_{i}.avi"
