@@ -107,7 +107,7 @@ async def generate_assets(dialogs, lang, voice_pack_name, rate_str):
         f.write(srt_content)
     return audio_files, timeline
 
-def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitles, wave_mode_key, progress_callback):
+def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitles, wave_mode_key, logo_scale_val, progress_callback):
     list_path = os.path.join(OUTPUT_DIR, "audio_list.txt")
     with open(list_path, "w") as f:
         for audio in audio_files: f.write(f"file '{os.path.abspath(audio)}'\n")
@@ -122,12 +122,9 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitle
 
     wave_filter = WAVE_MODES[wave_mode_key]
 
-    # --- XÂY DỰNG CHUỖI FILTER PHỨC TẠP ---
-    # Đầu vào 0: Video nền
-    # Đầu vào 1: Audio (để tạo sóng)
-    # Đầu vào 2 (nếu có): Logo
-    
-    # 1. Xử lý nền và sóng âm
+    # Tính toán tỉ lệ logo (chia cho 100 vì scale GUI là phần trăm)
+    scale_factor = logo_scale_val / 100.0
+
     filter_chain = (
         f"[0:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080[bg];"
         f"[1:a]{wave_filter}[wave];"
@@ -137,21 +134,18 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitle
     logo_input = []
     current_v = "[v_base]"
 
-    # 2. Xử lý chèn Logo nếu được chọn
-    # iw*0.25 = 25% chiều rộng ảnh gốc. W-w-50:50 = cách lề phải 50px, lề trên 50px
     if selected_logo:
         logo_input = ["-i", selected_logo]
-        filter_chain += f"[2:v]scale=iw*0.25:-1[logo_scaled];"
+        # Sử dụng biến scale_factor từ GUI
+        filter_chain += f"[2:v]scale=iw*{scale_factor}:-1[logo_scaled];"
         filter_chain += f"{current_v}[logo_scaled]overlay=W-w-50:50[v_logo];"
         current_v = "[v_logo]"
 
-    # 3. Xử lý phụ đề
     if show_subtitles: 
-        filter_chain += f"{current_v}{sub_style},fps=5[v]"
+        filter_chain += f"{current_v}{sub_style},fps=12[v]"
     else: 
-        filter_chain += f"{current_v}fps=5[v]"
+        filter_chain += f"{current_v}fps=12[v]"
 
-    # Cấu hình Input cho FFmpeg
     bg_input = ["-f", "lavfi", "-i", "color=c=black:s=1920x1080"]
     if selected_bg:
         if selected_bg.lower().endswith((".mp4", ".mov")): bg_input = ["-stream_loop", "-1", "-i", selected_bg]
@@ -174,7 +168,6 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitle
             progress_callback(min(int((current_seconds / total_dur) * 100), 100))
     process.wait()
 
-    # Dọn dẹp
     try:
         for audio in audio_files:
             if os.path.exists(audio): os.remove(audio)
@@ -207,7 +200,7 @@ def run_processing():
         audio_files, total_dur = loop.run_until_complete(generate_assets(dialogs, lang, voice_pack, speed_var.get()))
         
         out = build_video_ffmpeg_with_progress(
-            audio_files, total_dur, lang, show_sub_var.get(), wave_var.get(),
+            audio_files, total_dur, lang, show_sub_var.get(), wave_var.get(), logo_size_scale.get(),
             lambda v: (progress_bar.configure(value=v), percent_label.config(text=f"Đang Render: {v}%"), root.update_idletasks())
         )
         messagebox.showinfo("Thành công", f"Video lưu tại:\n{out}")
@@ -236,8 +229,8 @@ def choose_logo():
 
 # ---------- GUI LAYOUT ----------
 root = tk.Tk()
-root.title("AI Podcast Generator - Logo & Waveform")
-root.geometry("750x750")
+root.title("AI Podcast Generator - Logo Custom Size")
+root.geometry("750x800")
 
 cfg_frame = tk.LabelFrame(root, text=" Cấu hình ", padx=10, pady=10)
 cfg_frame.pack(pady=10, fill="x", padx=20)
@@ -265,19 +258,25 @@ tk.Checkbutton(cfg_frame, text="Hiện Subtitle", variable=show_sub_var).grid(ro
 
 update_voice_options()
 
-# Frame chọn File Nền & Logo
-file_frame = tk.Frame(root)
-file_frame.pack(pady=5)
+# Frame chọn File Nền & Logo & Size
+file_frame = tk.LabelFrame(root, text=" Tài nguyên & Logo ", padx=10, pady=10)
+file_frame.pack(pady=5, fill="x", padx=20)
 
 # Background
-tk.Button(file_frame, text="Chọn Nền (Ảnh/Video)", command=choose_background).grid(row=0, column=0, padx=5)
-bg_label = tk.Label(file_frame, text="Chưa chọn nền", fg="blue", width=25, anchor="w")
-bg_label.grid(row=0, column=1)
+tk.Button(file_frame, text="Chọn Nền (Ảnh/Video)", command=choose_background).grid(row=0, column=0, padx=5, sticky="w")
+bg_label = tk.Label(file_frame, text="Chưa chọn nền", fg="blue", width=40, anchor="w")
+bg_label.grid(row=0, column=1, columnspan=2)
 
 # Logo
-tk.Button(file_frame, text="Chọn Logo (25% size)", command=choose_logo).grid(row=1, column=0, padx=5, pady=5)
-logo_label = tk.Label(file_frame, text="Chưa chọn logo", fg="green", width=25, anchor="w")
-logo_label.grid(row=1, column=1)
+tk.Button(file_frame, text="Chọn Logo", command=choose_logo).grid(row=1, column=0, padx=5, pady=10, sticky="w")
+logo_label = tk.Label(file_frame, text="Chưa chọn logo", fg="green", width=40, anchor="w")
+logo_label.grid(row=1, column=1, columnspan=2)
+
+# Kích thước Logo
+tk.Label(file_frame, text="Kích thước Logo (%):").grid(row=2, column=0, padx=5, sticky="w")
+logo_size_scale = tk.Scale(file_frame, from_=5, to=50, orient="horizontal", length=200)
+logo_size_scale.set(15) # Mặc định 15%
+logo_size_scale.grid(row=2, column=1, sticky="w")
 
 text_box = tk.Text(root, width=85, height=12, font=("Consolas", 10))
 text_box.pack(pady=10, padx=20)
