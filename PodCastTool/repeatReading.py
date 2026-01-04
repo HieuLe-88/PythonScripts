@@ -12,10 +12,10 @@ from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips,
 class VideoGenerator:
     def __init__(self, root):
         self.root = root
-        self.root.title("Language Lesson Creator")
+        self.root.title("Language Lesson - Pattern Mode")
         self.root.geometry("400x200")
         
-        self.label = tk.Label(root, text="Select a .txt file\nEach repeat is at least 2s", wraplength=300)
+        self.label = tk.Label(root, text="Pattern: ES -> 2s Gap -> EN -> ES -> ES", wraplength=300)
         self.label.pack(pady=20)
         self.btn = tk.Button(root, text="Select File & Generate", command=self.start_process)
         self.btn.pack(pady=10)
@@ -33,11 +33,10 @@ class VideoGenerator:
         return None
 
     def make_silence(self, duration):
-        """Creates a silent audio clip of a specific duration."""
-        return AudioClip(lambda t: [0, 0], duration=duration, fps=44100)
+        return AudioClip(lambda t: [0, 0], duration=max(0.1, duration), fps=5)
 
     def create_frame(self, es_text, en_text, width=1280, height=720):
-        img = Image.new('RGB', (width, height), color=(25, 25, 25))
+        img = Image.new('RGB', (width, height), color=(20, 20, 30))
         draw = ImageDraw.Draw(img)
         try:
             font = ImageFont.truetype("arial.ttf", 45)
@@ -57,7 +56,7 @@ class VideoGenerator:
             lines = [line for line in f.readlines() if line.strip()]
 
         all_video_segments = []
-        fps = 24
+        fps = 5
 
         for i, line in enumerate(lines):
             data = self.parse_line(line)
@@ -72,35 +71,37 @@ class VideoGenerator:
             es_audio = AudioFileClip(es_temp)
             en_audio = AudioFileClip(en_temp)
 
+            # --- CUSTOM PATTERN LOGIC ---
             line_audio_list = []
             
-            # Spanish repeats
-            for _ in range(data['es_count']):
-                line_audio_list.append(es_audio)
-                # Calculate if we need extra silence to reach the 2s mark
-                if es_audio.duration < 2.0:
-                    line_audio_list.append(self.make_silence(2.0 - es_audio.duration))
-                else:
-                    line_audio_list.append(self.make_silence(0.2)) # Tiny gap for long sentences
+            # 1. First Spanish Repetition (Slot 1)
+            line_audio_list.append(es_audio)
+            line_audio_list.append(self.make_silence(0.5)) 
 
-            # English repeats
+            # 2. Forced 1.3s Silence Gap
+            line_audio_list.append(self.make_silence(1.3))
+
+            # 3. English Repetition(s) (e.g., Slot 1)
             for _ in range(data['en_count']):
                 line_audio_list.append(en_audio)
-                if en_audio.duration < 2.0:
-                    line_audio_list.append(self.make_silence(2.0 - en_audio.duration))
-                else:
-                    line_audio_list.append(self.make_silence(0.2))
+                line_audio_list.append(self.make_silence(0.5))
 
+            # 4. Remaining Spanish Repetitions (Slots 2 and 3)
+            if data['es_count'] > 1:
+                for _ in range(data['es_count'] - 1):
+                    line_audio_list.append(es_audio)
+                    line_audio_list.append(self.make_silence(0.5))
+            
             final_audio_for_line = concatenate_audioclips(line_audio_list)
             total_duration = final_audio_for_line.duration
 
+            # Video generation
             temp_avi = f"video_temp_{i}.avi"
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
             out = cv2.VideoWriter(temp_avi, fourcc, fps, (1280, 720))
             frame = self.create_frame(data['es_text'], data['en_text'])
             
-            num_frames = int(total_duration * fps)
-            for _ in range(num_frames):
+            for _ in range(int(total_duration * fps)):
                 out.write(frame)
             out.release()
 
@@ -109,23 +110,21 @@ class VideoGenerator:
 
         if all_video_segments:
             final_result = concatenate_videoclips(all_video_segments)
-            final_result.write_videofile("language_lesson.mp4", codec="libx264", audio_codec="aac", fps=fps)
+            final_result.write_videofile("pattern_lesson.mp4", codec="libx264", audio_codec="aac", fps=fps)
 
             # Cleanup
-            es_audio.close() # Important to close clips before deleting files
-            en_audio.close()
             for i in range(len(lines)):
                 for f in [f"es_temp_{i}.mp3", f"en_temp_{i}.mp3", f"video_temp_{i}.avi"]:
                     if os.path.exists(f): 
                         try: os.remove(f)
                         except: pass
             
-            messagebox.showinfo("Success", "Video saved as language_lesson.mp4")
+            messagebox.showinfo("Success", "Video saved as pattern_lesson.mp4")
 
     def start_process(self):
         file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
         if file_path:
-            self.label.config(text="Processing... please wait.")
+            self.label.config(text="Generating Pattern Video...")
             self.root.update()
             try:
                 self.process_video(file_path)
