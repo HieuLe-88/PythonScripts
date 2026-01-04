@@ -12,11 +12,12 @@ from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips,
 class VideoGenerator:
     def __init__(self, root):
         self.root = root
-        self.root.title("Language Lesson - Pattern Mode")
-        self.root.geometry("500x480")
+        self.root.title("Language Lesson - Pattern Mode with Logo")
+        self.root.geometry("500x550")
 
         # Variables
         self.output_dir = tk.StringVar(value=os.getcwd())
+        self.logo_path = tk.StringVar(value="")
         self.selected_voice = tk.StringVar(value="es-ES-AlvaroNeural (Male)")
         self.selected_speed = tk.StringVar(value="100%")
 
@@ -40,14 +41,21 @@ class VideoGenerator:
         self.speed_combo = ttk.Combobox(root, textvariable=self.selected_speed, values=speeds, width=15, state="readonly")
         self.speed_combo.pack(pady=5)
 
-        # 3. Output Folder
+        # 3. Logo Selection
+        tk.Label(root, text="Watermark Logo (Optional):").pack(pady=(10, 0))
+        logo_frame = tk.Frame(root)
+        logo_frame.pack(pady=5)
+        tk.Entry(logo_frame, textvariable=self.logo_path, width=40).pack(side=tk.LEFT, padx=5)
+        tk.Button(logo_frame, text="Select Logo", command=self.browse_logo).pack(side=tk.LEFT)
+
+        # 4. Output Folder
         tk.Label(root, text="Output Folder:").pack(pady=(10, 0))
         folder_frame = tk.Frame(root)
         folder_frame.pack(pady=5)
         tk.Entry(folder_frame, textvariable=self.output_dir, width=40).pack(side=tk.LEFT, padx=5)
         tk.Button(folder_frame, text="Browse", command=self.browse_folder).pack(side=tk.LEFT)
 
-        # 4. Action Button (Fixed the padding error here)
+        # 5. Action Button
         self.btn = tk.Button(root, text="Select TXT & Start Generation", 
                              bg="#4CAF50", fg="white", font=("Arial", 11, "bold"),
                              command=self.start_process, padx=10, pady=10)
@@ -60,6 +68,11 @@ class VideoGenerator:
         folder = filedialog.askdirectory()
         if folder:
             self.output_dir.set(folder)
+
+    def browse_logo(self):
+        file = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg *.bmp")])
+        if file:
+            self.logo_path.set(file)
 
     def parse_line(self, line):
         pattern = r"(.+?)\s*\((\d+)\)\.\|(.+?)\s*\((\d+)\)\."
@@ -78,22 +91,39 @@ class VideoGenerator:
 
     def create_frame(self, es_text, en_text, width=1280, height=720):
         img = Image.new('RGB', (width, height), color=(20, 20, 30))
+        
+        # Logo Logic (8% Width)
+        if self.logo_path.get() and os.path.exists(self.logo_path.get()):
+            try:
+                logo = Image.open(self.logo_path.get()).convert("RGBA")
+                logo_w = int(width * 0.08)
+                w_percent = (logo_w / float(logo.size[0]))
+                logo_h = int((float(logo.size[1]) * float(w_percent)))
+                logo = logo.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
+                pos_x = width - logo_w - 25
+                pos_y = 25
+                img.paste(logo, (pos_x, pos_y), logo)
+            except Exception:
+                pass
+
         draw = ImageDraw.Draw(img)
         try:
             font = ImageFont.truetype("arial.ttf", 45)
         except:
             font = ImageFont.load_default()
+            
         draw.text((width//2, height//3), es_text, fill="white", font=font, anchor="mm")
         draw.text((width//2, 2*height//3), en_text, fill="yellow", font=font, anchor="mm")
         return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
     async def generate_audio(self, text, voice_str, speed_str, filename):
-        # Format speed: "80%" -> "-20%"
         speed_val = int(speed_str.replace("%", ""))
-        rate = f"{speed_val - 100}%"
-        # Extract voice ID
+        # Fix for Invalid Rate error: use +0% for 100 speed
+        rate_val = speed_val - 100
+        rate_str = f"{rate_val:+d}%" 
+        
         voice = voice_str.split(" ")[0]
-        communicate = edge_tts.Communicate(text, voice, rate=rate)
+        communicate = edge_tts.Communicate(text, voice, rate=rate_str)
         await communicate.save(filename)
 
     def process_video(self, file_path):
@@ -101,9 +131,9 @@ class VideoGenerator:
             lines = [line for line in f.readlines() if line.strip()]
 
         all_video_segments = []
-        fps = 5 # Low FPS for static text videos saves processing time
+        fps = 5 
         out_folder = self.output_dir.get()
-        final_path = os.path.join(out_folder, "pattern_lesson.mp4")
+        final_path = os.path.join(out_folder, "pattern_lesson_branded.mp4")
 
         for i, line in enumerate(lines):
             data = self.parse_line(line)
@@ -118,26 +148,21 @@ class VideoGenerator:
             es_audio = AudioFileClip(es_temp)
             en_audio = AudioFileClip(en_temp)
 
-            # Build Audio Sequence: ES -> 1.3s Gap -> EN -> ES -> ES
             line_audio_list = []
-            
-            # Spanish 1
             line_audio_list.append(es_audio)
             line_audio_list.append(self.make_silence(0.5)) 
-            # Gap
             line_audio_list.append(self.make_silence(1.3))
-            # English
+            
             for _ in range(data['en_count']):
                 line_audio_list.append(en_audio)
                 line_audio_list.append(self.make_silence(0.5))
-            # Spanish Remaining
+                
             if data['es_count'] > 1:
                 for _ in range(data['es_count'] - 1):
                     line_audio_list.append(es_audio)
                     line_audio_list.append(self.make_silence(0.5))
             
             final_audio = concatenate_audioclips(line_audio_list)
-            
             temp_avi = f"video_temp_{i}.avi"
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
             out = cv2.VideoWriter(temp_avi, fourcc, fps, (1280, 720))
@@ -154,7 +179,6 @@ class VideoGenerator:
             final_result = concatenate_videoclips(all_video_segments)
             final_result.write_videofile(final_path, codec="libx264", audio_codec="aac", fps=fps)
             
-            # Cleanup
             for i in range(len(lines)):
                 for f in [f"es_temp_{i}.mp3", f"en_temp_{i}.mp3", f"video_temp_{i}.avi"]:
                     if os.path.exists(f):
@@ -166,7 +190,7 @@ class VideoGenerator:
     def start_process(self):
         file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
         if file_path:
-            self.status_label.config(text="Generating... please wait.", fg="red")
+            self.status_label.config(text="Generating branded video...", fg="red")
             self.root.update()
             try:
                 self.process_video(file_path)

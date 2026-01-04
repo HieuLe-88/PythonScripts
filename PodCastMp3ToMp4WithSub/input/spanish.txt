@@ -3,12 +3,3 @@ buena idea (3).| Great idea (1).
 
 Necesito (3).| Need (1).
 Necesito un poco más de tiempo para decidir (3).|I need a little more time to decide (1).
-
-Pdrias (3).| Could you (1).
-¿Podrías hablar más despacio, por favor? (3).|Could you speak more slowly, please? (1).
-
-Gustaria (3).| Would (1).
-Me gustaría reservar una mesa para dos personas (3).|I would like to reserve a table for two people (1).
-
-Si (3).| If (1).
-No estoy seguro de si podré ir mañana (3).|I'm not sure if I'll be able to go tomorrow (1).
