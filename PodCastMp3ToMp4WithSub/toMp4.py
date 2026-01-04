@@ -10,15 +10,17 @@ class PodcastVideoAllInOne:
     def __init__(self, root):
         self.root = root
         self.root.title("SpanishCorner - Podcast Video Creator Pro")
-        self.root.geometry("650x680") # Increased height for logo row
+        self.root.geometry("650x750") # Tăng chiều cao để chứa thanh trượt logo
 
         self.audio_path = tk.StringVar()
         self.srt_path = tk.StringVar()
         self.bg_path = tk.StringVar()
-        self.logo_path = tk.StringVar() # New variable for logo
+        self.logo_path = tk.StringVar()
         self.output_dir = tk.StringVar()
         self.has_sub = tk.BooleanVar(value=True)
-        self.has_logo = tk.BooleanVar(value=False) # Option to toggle logo
+        self.has_logo = tk.BooleanVar(value=False)
+        # --- Biến lưu tỉ lệ Logo (Mặc định 15%) ---
+        self.logo_size_percent = tk.IntVar(value=15)
 
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(expand=True, fill="both", padx=10, pady=10)
@@ -57,10 +59,19 @@ class PodcastVideoAllInOne:
         self.create_input_row(tab2, "Hình nền (IMG):", self.bg_path, lambda: self.bg_path.set(filedialog.askopenfilename()))
         
         # --- Logo Setup ---
-        logo_frame = tk.Frame(tab2)
-        logo_frame.pack(fill="x", padx=30, pady=5)
-        tk.Checkbutton(logo_frame, text="Chèn Logo vào video", variable=self.has_logo).pack(side="left")
-        self.create_input_row(tab2, "Logo (PNG/JPG):", self.logo_path, lambda: self.logo_path.set(filedialog.askopenfilename()))
+        logo_section = tk.LabelFrame(tab2, text=" Cấu hình Logo ", padx=10, pady=10)
+        logo_section.pack(fill="x", padx=30, pady=5)
+
+        check_row = tk.Frame(logo_section)
+        check_row.pack(fill="x")
+        tk.Checkbutton(check_row, text="Chèn Logo vào video", variable=self.has_logo).pack(side="left")
+        
+        self.create_input_row(logo_section, "Logo Path:", self.logo_path, lambda: self.logo_path.set(filedialog.askopenfilename()))
+
+        size_row = tk.Frame(logo_section)
+        size_row.pack(fill="x", pady=5)
+        tk.Label(size_row, text="Kích thước Logo (%):", width=20, anchor="w").pack(side="left")
+        tk.Scale(size_row, from_=10, to=100, orient="horizontal", variable=self.logo_size_percent).pack(side="left", fill="x", expand=True)
 
         # --- Subtitle Toggle ---
         sub_frame = tk.Frame(tab2)
@@ -178,9 +189,11 @@ class PodcastVideoAllInOne:
             # 3. Add Logo if enabled
             if self.has_logo.get():
                 cmd.extend(['-i', self.logo_path.get()])
-                logo_idx = 2 # Since bg is 0, audio is 1, logo is 2
-                # Scale logo to 200px wide, place at top-right (W-w-20, 20)
-                filter_str += f"; [{logo_idx}:v]scale=200:-1[logo]; {last_v_tag}[logo]overlay=main_w-overlay_w-20:20[v_with_logo]"
+                logo_idx = 2
+                # Tính toán tỉ lệ thập phân (ví dụ: 15% -> 0.15)
+                scale_val = self.logo_size_percent.get() / 100.0
+                # Áp dụng scale tỉ lệ với iw (input width của logo)
+                filter_str += f"; [{logo_idx}:v]scale=iw*{scale_val}:-1[logo]; {last_v_tag}[logo]overlay=main_w-overlay_w-20:20[v_with_logo]"
                 last_v_tag = "[v_with_logo]"
 
             # 4. Add Subtitles if enabled
