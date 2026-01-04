@@ -1,14 +1,75 @@
-buena idea (3).| Great idea (1).
+
+Buena idea (3).|Great idea (1).
 ¡Qué buena idea, no se me había ocurrido! (3).|What a great idea, it hadn't occurred to me! (1).
 
-Necesito (3).| Need (1).
+Necesito (3).|Need (1).
 Necesito un poco más de tiempo para decidir (3).|I need a little more time to decide (1).
 
-Pdrias (3).| Could you (1).
-¿Podrías hablar más despacio, por favor? (3).|Could you speak more slowly, please? (1).
+Quiero (3).|Want (1).
+Quiero viajar al extranjero el próximo año (3).|I want to travel abroad next year (1).
 
-Gustaria (3).| Would (1).
-Me gustaría reservar una mesa para dos personas (3).|I would like to reserve a table for two people (1).
+Puedo (3).|Can / Be able to (1).
+¿Puedo ayudarte con eso? (3).|Can I help you with that? (1).
 
-Si (3).| If (1).
-No estoy seguro de si podré ir mañana (3).|I'm not sure if I'll be able to go tomorrow (1).
+Tengo (3).|Have (1).
+Tengo una reunión esta tarde (3).|I have a meeting this afternoon (1).
+
+Voy (3).|Go (1).
+Voy al aeropuerto temprano mañana (3).|I’m going to the airport early tomorrow (1).
+
+Vengo (3).|Come (1).
+Vengo de trabajar y estoy cansado (3).|I’m coming from work and I’m tired (1).
+
+Hago (3).|Do / Make (1).
+Hago ejercicio tres veces por semana (3).|I exercise three times a week (1).
+
+Digo (3).|Say / Tell (1).
+Te digo la verdad siempre (3).|I always tell you the truth (1).
+
+Veo (3).|See (1).
+Veo el problema claramente (3).|I see the problem clearly (1).
+
+Doy (3).|Give (1).
+Te doy mi opinión sincera (3).|I give you my honest opinion (1).
+
+Tomo (3).|Take (1).
+Tomo un café antes de trabajar (3).|I have a coffee before working (1).
+
+Llego (3).|Arrive (1).
+Llego a casa a las siete (3).|I arrive home at seven (1).
+
+Salgo (3).|Leave / Go out (1).
+Salgo del trabajo a las seis (3).|I leave work at six (1).
+
+Encuentro (3).|Find (1).
+No encuentro mis llaves (3).|I can’t find my keys (1).
+
+Pienso (3).|Think (1).
+Pienso que es una buena decisión (3).|I think it’s a good decision (1).
+
+Creo (3).|Believe / Think (1).
+Creo que va a llover hoy (3).|I think it’s going to rain today (1).
+
+Siento (3).|Feel / Be sorry (1).
+Siento mucho llegar tarde (3).|I’m very sorry for arriving late (1).
+
+Trabajo (3).|Work (1).
+Trabajo en una empresa internacional (3).|I work in an international company (1).
+
+Estudio (3).|Study (1).
+Estudio español todos los días (3).|I study Spanish every day (1).
+
+Aprendo (3).|Learn (1).
+Aprendo nuevas palabras cada semana (3).|I learn new words every week (1).
+
+Busco (3).|Look for (1).
+Busco un lugar tranquilo para comer (3).|I’m looking for a quiet place to eat (1).
+
+Uso (3).|Use (1).
+Uso el móvil para trabajar (3).|I use my phone to work (1).
+
+Espero (3).|Wait / Hope (1).
+Espero que todo salga bien (3).|I hope everything goes well (1).
+
+Cambio (3).|Change (1).
+Cambio de opinión a veces (3).|I change my mind sometimes (1).

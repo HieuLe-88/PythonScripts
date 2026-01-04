@@ -87,7 +87,7 @@ class VideoGenerator:
         return None
 
     def make_silence(self, duration):
-        return AudioClip(lambda t: [0, 0], duration=max(0.1, duration), fps=44100)
+        return AudioClip(lambda t: [0, 0], duration=max(0.1, duration), fps=25)
 
     async def generate_audio(self, text, voice_str, speed_str, filename):
         speed_val = int(speed_str.replace("%", ""))
@@ -116,25 +116,31 @@ class VideoGenerator:
         return '\n'.join(lines)
 
     def create_frame(self, es_text, en_text, width=1280, height=720):
-        # Overall Background (Seashell White)
+        # 1. Main Background: Seashell White (RGB: 255, 245, 240)
         img = Image.new('RGB', (width, height), color=(255, 245, 240))
         draw = ImageDraw.Draw(img)
 
-        # Box Positioning
+        # 2. Dimensions and Positioning
         margin_x = 80
+        container_padding = 40
         box_width = width - (margin_x * 2)
-        box_height = 240 # Increased height slightly for multi-line support
-        text_padding = 40 # Space inside the box so text doesn't touch the borders
+        inner_box_width = box_width - (container_padding * 2)
+        inner_box_height = 220 
+        
+        # 3. Outer Container Box (Large white box covering everything)
+        # Positioned to fit both inner boxes plus padding
+        container_box = [margin_x - 20, 60, width - margin_x + 20, 660]
+        draw.rounded_rectangle(container_box, radius=35, fill="white", outline=(200, 200, 200), width=2)
 
-        # Spanish Box (Rose White)
-        es_box = [margin_x, 80, margin_x + box_width, 80 + box_height]
+        # 4. Spanish Box (Rose White: 255, 240, 235)
+        es_box = [margin_x + 20, 100, width - margin_x - 20, 100 + inner_box_height]
         draw.rounded_rectangle(es_box, radius=25, fill=(255, 240, 235), outline=(0, 128, 0), width=4)
 
-        # English Box (Periwinkle Blue)
-        en_box = [margin_x, 380, margin_x + box_width, 380 + box_height]
+        # 5. English Box (Periwinkle Blue: 178, 191, 255)
+        en_box = [margin_x + 20, 380, width - margin_x - 20, 380 + inner_box_height]
         draw.rounded_rectangle(en_box, radius=25, fill=(178, 191, 255), outline=(50, 50, 50), width=2)
 
-        # Fonts
+        # 6. Fonts and Text Wrapping
         en_size = 48
         es_size = int(en_size * 1.5)
         try:
@@ -144,19 +150,17 @@ class VideoGenerator:
             es_font = ImageFont.load_default()
             en_font = ImageFont.load_default()
 
-        # Wrap Text Logic
-        wrapped_es = self.wrap_text(es_text, es_font, box_width - text_padding)
-        wrapped_en = self.wrap_text(en_text, en_font, box_width - text_padding)
+        wrapped_es = self.wrap_text(es_text, es_font, (width - margin_x * 2) - 100)
+        wrapped_en = self.wrap_text(en_text, en_font, (width - margin_x * 2) - 100)
 
-        # Center Wrapped Text in Boxes
-        es_pos = (es_box[0] + box_width//2, es_box[1] + box_height//2)
-        en_pos = (en_box[0] + box_width//2, en_box[1] + box_height//2)
+        # 7. Center Text
+        es_pos = (es_box[0] + (es_box[2] - es_box[0]) // 2, es_box[1] + inner_box_height // 2)
+        en_pos = (en_box[0] + (en_box[2] - en_box[0]) // 2, en_box[1] + inner_box_height // 2)
 
-        # Draw text with align="center" for multi-line centering
         draw.text(es_pos, wrapped_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
         draw.text(en_pos, wrapped_en, fill="black", font=en_font, anchor="mm", align="center")
 
-        # Logo Logic (Applied last to be on top)
+        # 8. Logo Logic
         if self.logo_path.get() and os.path.exists(self.logo_path.get()):
             try:
                 logo = Image.open(self.logo_path.get()).convert("RGBA")
@@ -164,7 +168,7 @@ class VideoGenerator:
                 w_percent = (logo_w / float(logo.size[0]))
                 logo_h = int((float(logo.size[1]) * float(w_percent)))
                 logo = logo.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
-                img.paste(logo, (width - logo_w - 25, 20), logo)
+                img.paste(logo, (width - logo_w - 45, 15), logo)
             except: pass
 
         return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
