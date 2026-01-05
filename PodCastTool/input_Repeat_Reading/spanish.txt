@@ -1,74 +1,77 @@
-Abro (3).|Open (1).
-Abro la ventana porque hace calor (3).|I open the window because it’s hot (1).
 
-Cierro (3).|Close (1).
-Cierro la puerta antes de salir (3).|I close the door before leaving (1).
 
-Escucho (3).|Listen (1).
-Escucho música mientras trabajo (3).|I listen to music while I work (1).
+Entro (3).|Enter (1).
+Entro a la oficina a las nueve (3).|I enter the office at nine (1).
 
-Miro (3).|Look / Watch (1).
-Miro la televisión todas las noches (3).|I watch TV every night (1).
+Saludo (3).|Greet (1).
+Saludo a mis compañeros cada mañana (3).|I greet my coworkers every morning (1).
 
-Cocino (3).|Cook (1).
-Cocino la cena para mi familia (3).|I cook dinner for my family (1).
+Sonrío (3).|Smile (1).
+Sonrío cuando estoy contento (3).|I smile when I’m happy (1).
 
-Lavo (3).|Wash (1).
-Lavo los platos después de comer (3).|I wash the dishes after eating (1).
+Escapo (3).|Escape (1).
+Escapo del ruido los fines de semana (3).|I escape from the noise on weekends (1).
 
-Corro (3).|Run (1).
-Corro en el parque todos los sábados (3).|I run in the park every Saturday (1).
+Descanso (3).|Rest (1).
+Descanso después de un día largo (3).|I rest after a long day (1).
 
-Escribo (3).|Write (1).
-Escribo un correo importante cada día (3).|I write an important email every day (1).
+Duermo (3).|Sleep (1).
+Duermo ocho horas cuando puedo (3).|I sleep eight hours when I can (1).
 
-Leo (3).|Read (1).
-Leo un libro antes de dormir (3).|I read a book before sleeping (1).
+Despierto (3).|Wake up (1).
+Despierto temprano para trabajar (3).|I wake up early to work (1).
 
-Viajo (3).|Travel (1).
-Viajo a España una vez al año (3).|I travel to Spain once a year (1).
+Desayuno (3).|Have breakfast (1).
+Desayuno en casa antes de salir (3).|I have breakfast at home before leaving (1).
 
-Pregunto (3).|Ask (1).
-Pregunto cuando no entiendo algo (3).|I ask when I don’t understand something (1).
+Almuerzo (3).|Have lunch (1).
+Almuerzo con mis compañeros de trabajo (3).|I have lunch with my coworkers (1).
 
-Contesto (3).|Answer (1).
-Contesto los mensajes rápido (3).|I answer messages quickly (1).
+Ceno (3).|Have dinner (1).
+Ceno tarde cuando trabajo mucho (3).|I have dinner late when I work a lot (1).
 
-Ayudo (3).|Help (1).
-Ayudo a mis amigos con sus tareas (3).|I help my friends with their homework (1).
+Camino (3).|Walk (1).
+Camino al trabajo cuando hace buen tiempo (3).|I walk to work when the weather is good (1).
 
-Recibo (3).|Receive (1).
-Recibo correos electrónicos todos los días (3).|I receive emails every day (1).
+Manejo (3).|Drive (1).
+Manejo con cuidado en la ciudad (3).|I drive carefully in the city (1).
 
-Apruebo (3).|Pass / Approve (1).
-Apruebo el examen de matemáticas (3).|I pass the math exam (1).
+Monto (3).|Ride / Get on (1).
+Monto en bicicleta los domingos (3).|I ride a bicycle on Sundays (1).
 
-Aprieto (3).|Press / Squeeze (1).
-Aprieto el botón para llamar al ascensor (3).|I press the button to call the elevator (1).
+Compro (3).|Buy (1).
+Compro comida después del trabajo (3).|I buy food after work (1).
 
-Pago (3).|Pay (1).
-Pago la cuenta del restaurante con tarjeta (3).|I pay the restaurant bill by card (1).
+Gasto (3).|Spend (1).
+Gasto mucho tiempo estudiando español (3).|I spend a lot of time studying Spanish (1).
 
-Vendo (3).|Sell (1).
-Vendo mi coche porque necesito uno nuevo (3).|I sell my car because I need a new one (1).
+Ahorro (3).|Save (money) (1).
+Ahorro dinero para viajar (3).|I save money to travel (1).
 
-Recuerdo (3).|Remember (1).
-Recuerdo mi primer viaje a la playa (3).|I remember my first trip to the beach (1).
+Elijo (3).|Choose (1).
+Elijo esta opción porque es más fácil (3).|I choose this option because it’s easier (1).
 
-Olvido (3).|Forget (1).
-Olvido mis llaves a veces (3).|I sometimes forget my keys (1).
+Acepto (3).|Accept (1).
+Acepto la invitación con gusto (3).|I accept the invitation gladly (1).
 
-Pruebo (3).|Try / Taste (1).
-Pruebo la comida típica del lugar (3).|I try the local food (1).
+Rechazo (3).|Reject (1).
+Rechazo la oferta porque no me conviene (3).|I reject the offer because it doesn’t suit me (1).
 
-Busco (3).|Search / Look for (1).
-Busco información sobre vuelos baratos (3).|I look for information about cheap flights (1).
+Prometo (3).|Promise (1).
+Prometo estudiar más español (3).|I promise to study more Spanish (1).
 
-Recojo (3).|Pick up / Collect (1).
-Recojo mi ropa de la lavandería (3).|I pick up my clothes from the laundry (1).
+Intento (3).|Try / Attempt (1).
+Intento hablar español todos los días (3).|I try to speak Spanish every day (1).
 
-Firmo (3).|Sign (1).
-Firmo los documentos importantes en la oficina (3).|I sign important documents at the office (1).
+Practico (3).|Practice (1).
+Practico español con videos y podcasts (3).|I practice Spanish with videos and podcasts (1).
 
-Envio (3).|Send (1).
-Envio cartas y paquetes a mis amigos (3).|I send letters and packages to my friends (1).
+Mejoro (3).|Improve (1).
+Mejoro mi pronunciación poco a poco (3).|I improve my pronunciation little by little (1).
+
+Repito (3).|Repeat (1).
+Repito las frases para aprender mejor (3).|I repeat the sentences to learn better (1).
+
+Disfruto (3).|Enjoy (1).
+Disfruto aprender nuevos idiomas (3).|I enjoy learning new languages (1).
+

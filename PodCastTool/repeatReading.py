@@ -87,7 +87,7 @@ class VideoGenerator:
         return None
 
     def make_silence(self, duration):
-        return AudioClip(lambda t: [0, 0], duration=max(0.1, duration), fps=25)
+        return AudioClip(lambda t: [0, 0], duration=max(0.1, duration), fps=15)
 
     async def generate_audio(self, text, voice_str, speed_str, filename):
         speed_val = int(speed_str.replace("%", ""))
@@ -178,7 +178,7 @@ class VideoGenerator:
             lines = [line for line in f.readlines() if line.strip()]
 
         all_video_segments = []
-        fps = 5 
+        fps = 4
         out_folder = self.output_dir.get()
         final_path = os.path.join(out_folder, "pattern_lesson_wrapped.mp4")
 
