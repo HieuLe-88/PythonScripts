@@ -1,0 +1,8 @@
+1
+00:00:00,000 --> 00:00:02,688
+{\fs17}Chào bạn, Hôm nay thế nào\N{\fs15}Hi, how are you today?
+
+2
+00:00:02,688 --> 00:00:04,296
+{\fs17}Tôi khỏe\N{\fs15}I am good.
+
