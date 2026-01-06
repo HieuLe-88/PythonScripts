@@ -83,7 +83,8 @@ async def generate_assets(dialogs, lang, voice_pack_name, rate_str):
     timeline = 0.0
     
     for i, d in enumerate(dialogs):
-        voice = pack["male"] if d[0] == "M" else pack["female"]
+        role = d[0].upper()
+        voice = pack["male"] if role == "M" else pack["female"]
         audio_path = os.path.join(OUTPUT_DIR, f"audio_{i}.mp3")
         await edge_tts.Communicate(d[1], voice, rate=rate).save(audio_path)
         
@@ -94,12 +95,19 @@ async def generate_assets(dialogs, lang, voice_pack_name, rate_str):
         dur = float(result.stdout)
         start_t, end_t = format_srt_time(timeline), format_srt_time(timeline + dur)
         
+        # Xử lý vị trí: M -> bên trái (\an4), F -> bên phải (\an6)
+        # \an4: Mid-Left, \an6: Mid-Right
+        pos_tag = "{\\an4}" if role == "M" else "{\\an6}"
+        
         main_text = d[1]
         f_size = 17 if len(main_text) <= 40 else 14
-        sub_text = f"{{\\fs{f_size}}}{d[1]}\\N{{\\fs{f_size-2}}}{d[2]}"
-        if lang == "Chinese": sub_text += f"\\N{{\\fs{f_size-4}}}{d[3]}"
+        
+        # Tạo nội dung sub với tag vị trí và kích thước
+        sub_line = f"{pos_tag}{{\\fs{f_size}}}{d[1]}\\N{{\\fs{f_size-2}}}{d[2]}"
+        if lang == "Chinese": 
+            sub_line += f"\\N{{\\fs{f_size-4}}}{d[3]}"
             
-        srt_content += f"{i+1}\n{start_t} --> {end_t}\n{sub_text}\n\n"
+        srt_content += f"{i+1}\n{start_t} --> {end_t}\n{sub_line}\n\n"
         audio_files.append(audio_path)
         timeline += dur
         
@@ -138,9 +146,11 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitle
         f"OutlineColour=&HFFFFFF,"
         f"Outline=3,"
         f"Shadow=0,"
-        f"Alignment=2,"
-        f"MarginV=45'"
+        f"MarginV=100,"
+        f"MarginL=100,"
+        f"MarginR=100'"
     )
+    
     wave_filter = WAVE_MODES[wave_mode_key]
 
     # Tính toán tỉ lệ logo (chia cho 100 vì scale GUI là phần trăm)
