@@ -97,7 +97,16 @@ async def generate_assets(dialogs, lang, voice_pack_name, rate_str):
         
         # Xử lý vị trí: M -> bên trái (\an4), F -> bên phải (\an6)
         # \an4: Mid-Left, \an6: Mid-Right
-        pos_tag = "{\\an4}" if role == "M" else "{\\an6}"
+        # Màn hình 1920x1080. Tâm giữa là 960.
+        # Dịch trái 35% từ tâm: 960 - (1920 * 0.35) = 288
+        # Dịch phải 35% từ tâm: 960 + (1920 * 0.35) = 1632
+        
+        if role == "M":
+            # an4 là neo lề TRÁI của cụm chữ tại tọa độ (x, y)
+            pos_tag = "{\\an4}" 
+        else:
+            # an6 là neo lề PHẢI của cụm chữ tại tọa độ (x, y)
+            pos_tag = "{\\an6}"
         
         main_text = d[1]
         f_size = 17 if len(main_text) <= 40 else 14

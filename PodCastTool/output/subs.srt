@@ -1,8 +1,72 @@
 1
-00:00:00,000 --> 00:00:02,688
-{\an4}{\fs17}Chào bạn, Hôm nay thế nào\N{\fs15}Hi, how are you today?
+00:00:00,000 --> 00:00:01,919
+{\an4}{\fs17}Bạn rảnh không\N{\fs15}Are you free?
 
 2
-00:00:02,688 --> 00:00:04,296
-{\an6}{\fs17}Tôi khỏe\N{\fs15}I am good.
+00:00:01,919 --> 00:00:04,056
+{\an6}{\fs17}Có, tôi rảnh\N{\fs15}Yes, I am free.
+
+3
+00:00:04,056 --> 00:00:06,048
+{\an4}{\fs17}Đi cà phê nhé\N{\fs15}Let’s get coffee.
+
+4
+00:00:06,048 --> 00:00:07,751
+{\an6}{\fs17}Ý hay đó\N{\fs15}That’s a good idea.
+
+5
+00:00:07,751 --> 00:00:10,007
+{\an4}{\fs17}Bạn thích cà phê không\N{\fs15}Do you like coffee?
+
+6
+00:00:10,007 --> 00:00:11,639
+{\an6}{\fs17}Tôi rất thích\N{\fs15}I like it a lot.
+
+7
+00:00:11,639 --> 00:00:13,391
+{\an4}{\fs17}Quán ở đâu\N{\fs15}Where is the cafe?
+
+8
+00:00:13,391 --> 00:00:15,240
+{\an6}{\fs17}Gần đây thôi\N{\fs15}It is nearby.
+
+9
+00:00:15,240 --> 00:00:17,231
+{\an4}{\fs17}Đi bộ được không\N{\fs15}Can we walk?
+
+10
+00:00:17,231 --> 00:00:19,295
+{\an6}{\fs17}Được, không xa\N{\fs15}Yes, not far.
+
+11
+00:00:19,295 --> 00:00:21,384
+{\an4}{\fs17}Bạn thường đến đây\N{\fs15}Do you come here often?
+
+12
+00:00:21,384 --> 00:00:23,184
+{\an6}{\fs17}Thỉnh thoảng thôi\N{\fs15}Only sometimes.
+
+13
+00:00:23,184 --> 00:00:25,200
+{\an4}{\fs17}Hôm nay đông không\N{\fs15}Is it crowded today?
+
+14
+00:00:25,200 --> 00:00:26,928
+{\an6}{\fs17}Không đông lắm\N{\fs15}Not very crowded.
+
+15
+00:00:26,928 --> 00:00:28,824
+{\an4}{\fs17}Bạn uống gì\N{\fs15}What will you drink?
+
+16
+00:00:28,824 --> 00:00:30,840
+{\an6}{\fs17}Tôi uống cà phê\N{\fs15}I drink coffee.
+
+17
+00:00:30,840 --> 00:00:32,664
+{\an4}{\fs17}Tôi uống trà\N{\fs15}I drink tea.
+
+18
+00:00:32,664 --> 00:00:34,440
+{\an6}{\fs17}Nghe ngon đấy\N{\fs15}Sounds good.
 
