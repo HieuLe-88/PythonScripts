@@ -95,26 +95,23 @@ async def generate_assets(dialogs, lang, voice_pack_name, rate_str):
         dur = float(result.stdout)
         start_t, end_t = format_srt_time(timeline), format_srt_time(timeline + dur)
         
-        # Xử lý vị trí: M -> bên trái (\an4), F -> bên phải (\an6)
-        # \an4: Mid-Left, \an6: Mid-Right
-        # Màn hình 1920x1080. Tâm giữa là 960.
-        # Dịch trái 35% từ tâm: 960 - (1920 * 0.35) = 288
-        # Dịch phải 35% từ tâm: 960 + (1920 * 0.35) = 1632
+        # Vị trí: M trái, F phải
+        pos_tag = "{\\an4}" if role == "M" else "{\\an6}"
         
-        if role == "M":
-            # an4 là neo lề TRÁI của cụm chữ tại tọa độ (x, y)
-            pos_tag = "{\\an4}" 
-        else:
-            # an6 là neo lề PHẢI của cụm chữ tại tọa độ (x, y)
-            pos_tag = "{\\an6}"
+        # --- TÍNH TOÁN KÍCH THƯỚC CHỮ ---
+        # Chữ chính (ví dụ 16)
+        f_size_main = 16 if len(d[1]) <= 40 else 20
+        # Chữ dịch nhỏ hơn 20%
+        f_size_sub = int(f_size_main * 0.8)
+        # Chữ phiên âm (nếu có - dành cho tiếng Trung) nhỏ hơn nữa
+        f_size_extra = int(f_size_main * 0.6)
+
+        # Xây dựng nội dung dòng sub bằng tag chuẩn ASS/SRT
+        # \N là xuống dòng
+        sub_line = f"{pos_tag}{{\\fs{f_size_main}}}{d[1]}\\N{{\\fs{f_size_sub}}}{d[2]}"
         
-        main_text = d[1]
-        f_size = 17 if len(main_text) <= 40 else 14
-        
-        # Tạo nội dung sub với tag vị trí và kích thước
-        sub_line = f"{pos_tag}{{\\fs{f_size}}}{d[1]}\\N{{\\fs{f_size-2}}}{d[2]}"
-        if lang == "Chinese": 
-            sub_line += f"\\N{{\\fs{f_size-4}}}{d[3]}"
+        if lang == "Chinese" and len(d) > 3: 
+            sub_line += f"\\N{{\\fs{f_size_extra}}}{d[3]}"
             
         srt_content += f"{i+1}\n{start_t} --> {end_t}\n{sub_line}\n\n"
         audio_files.append(audio_path)
@@ -135,29 +132,21 @@ def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitle
     srt_path = os.path.join(OUTPUT_DIR, "subs.srt").replace("\\", "/")
     current_font = FONT_CHINESE if lang == "Chinese" else FONT_LATIN
     
-    # NEW STYLING HERE:
-    #sub_style = (f"subtitles='{srt_path}':force_style='Fontname={current_font},FontSize=16,"
-    #                f"PrimaryColour=&H000000,BorderStyle=4,OutlineColour=&HFFFFFF,"
-    #                f"Alignment=2,MarginV=40,Outline=2'")
-
-    # Thay đổi quan trọng:
-    # BackColour=&HFFFFFF: Màu nền của hộp là TRẮNG
-    # OutlineColour=&HFFFFFF: Màu viền hộp là TRẮNG (để tạo khối vuông đồng nhất)
-    # PrimaryColour=&H000000: Màu chữ là ĐEN (để nổi bật trên nền trắng)
-
+    # BorderStyle=4 tạo hộp nền. 
+    # Outline chính là độ dày lề của hộp nếu BorderStyle=4.
     sub_style = (
         f"subtitles='{srt_path}':force_style="
         f"'Fontname={current_font},"
-        f"FontSize=16,"
+        f"FontSize=24," # Font size gốc để các thẻ \fs tính toán dựa trên đó
         f"PrimaryColour=&H000000,"
         f"BorderStyle=4,"
         f"BackColour=&HFFFFFF,"
         f"OutlineColour=&HFFFFFF,"
-        f"Outline=3,"
+        f"Outline=2,"
         f"Shadow=0,"
         f"MarginV=100,"
-        f"MarginL=100,"
-        f"MarginR=100'"
+        f"MarginL=60,"
+        f"MarginR=60'"
     )
     
     wave_filter = WAVE_MODES[wave_mode_key]
