@@ -1,4 +1,78 @@
+
+# PodCast Video Generation Tool
+# ==============================
+# A comprehensive tool for creating synchronized video presentations with text, pinyin, and text-to-speech audio.
+# Supports multiple languages (English, Spanish, Vietnamese, Chinese) with automatic pinyin generation for Chinese text.
+# Main Features:
+# - Parse text files with sentence pairs (original language + translation)
+# - Automatic pinyin generation for Chinese characters using pypinyin library
+# - Multi-language text-to-speech synthesis using Microsoft Edge TTS
+# - Dynamic font sizing and text wrapping for optimal display
+# - Frame-synchronized highlighting of current word during playback
+# - Support for Chinese characters with pinyin annotations above
+# - Pagination with automatic page breaks based on content height
+# - Audio concatenation and video muxing with ffmpeg
+# Dependencies:
+# - OpenCV (cv2) for video writing
+# - NumPy for image processing
+# - Tkinter for GUI
+# - PIL/Pillow for image manipulation and text rendering
+# - pypinyin (optional) for automatic pinyin generation
+# - edge-tts for Microsoft Azure text-to-speech
+# - ffmpeg/ffprobe for audio processing and muxing
+# How to Use This Tool:
+# =====================
+# 1. PREPARE INPUT FILE:
+#     Create a .txt file with sentence pairs in one of these formats:
+#     Format A (pipe-delimited with optional pinyin):
+#     中文|pīnyīn|English translation
+#     或者 (or):
+#     中文||English translation  (pinyin auto-generated if pypinyin installed)
+#     Format B (space-separated, auto-detected):
+#     English sentence Spanish translation English sentence Spanish translation ...
+#     Example file content:
+#     你好|nǐ hǎo|Hello
+#     谢谢|xiè xiè|Thank you
+# 2. LAUNCH APPLICATION:
+#     Run this script to open the GUI window.
+# 3. CONFIGURE AUDIO SETTINGS:
+#     - Select desired Voice from dropdown (Jenny EN, Alvaro ES, NamMinh VI, Yunxi ZH, etc.)
+#     - Choose Speech Speed (50% to 100%)
+#     - Click "Preview Voice" to test selected voice and speed
+#     - Click "Check Chinese Font" to verify Chinese character rendering capability
+# 4. SELECT INPUT FILE:
+#     - Click "Browse" button to open file dialog
+#     - Select your prepared .txt file
+#     - File path will appear in the text field
+# 5. GENERATE VIDEO:
+#     - Click "GENERATE VIDEO" button
+#     - Tool will:
+#       * Parse input file and generate pinyin if needed
+#       * Synthesize audio for each sentence using TTS
+#       * Create video frames with synchronized text highlighting
+#       * Concatenate audio and embed in video
+#       * Save final output as "output_map_function.mp4"
+#     - Video will auto-open when complete
+# OUTPUT:
+# - Final video file: output_map_function.mp4
+# - Resolution: 800x450 pixels
+# - Frame rate: 8 fps
+# - Audio: AAC codec, synchronized with text
+# - Word highlighting: Current word highlighted in light blue, changes per frame
+# TECHNICAL DETAILS:
+# - Font Selection: Automatically detects Chinese-capable fonts (NotoSansCJK, MSYH, SimHei, etc.)
+# - Pinyin Alignment: Intelligently aligns pinyin tokens to Chinese characters
+# - Pagination: Breaks content across pages based on available space
+# - Dynamic Font Sizing: Scales fonts to fit within display constraints (min 12pt)
+# - Line Wrapping: Smart word/character wrapping to maximize readability
+# TROUBLESHOOTING:
+# - Chinese characters not rendering: Click "Check Chinese Font" to diagnose
+# - TTS audio fails: Ensure internet connection for edge-tts service
+# - FFmpeg errors: Verify ffmpeg and ffprobe are installed and in system PATH
+# - File format issues: Ensure input .txt is UTF-8 encoded with proper delimiters
+    
 import cv2
+
 import numpy as np
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -798,7 +872,7 @@ def generate_video():
 
         # Synthesize TTS and compute frames
         width, height = 800, 450
-        fps = 24
+        fps = 8
         default_frames_per_word = 12
         tts_files, page_frame_counts = synthesize_tts_and_compute_frame_counts(prepped_pages, fps, default_frames_per_word)
 
