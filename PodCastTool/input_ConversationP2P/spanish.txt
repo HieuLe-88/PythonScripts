@@ -1,0 +1,5 @@
+
+
+M|Entro.|Enter.
+F|Entro a la oficina a las nueve.|I enter the office at nine.
+
