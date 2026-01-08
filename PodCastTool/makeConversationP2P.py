@@ -51,10 +51,25 @@ class VideoGenerator:
     def parse_line(self, line):
         parts = line.split("|")
         if len(parts) >= 3:
-            gender_val = parts[0].strip().upper() # M hoặc F
+            raw_tag = parts[0].strip().upper() # Ví dụ: "M1", "M2", "F"
+            
+            # Tách lấy chữ cái đầu (M hoặc F) để chọn giọng
+            gender_letter = re.findall(r'[MF]', raw_tag)
+            gender_letter = gender_letter[0] if gender_letter else 'M'
+            
+            # Xác định vị trí dựa trên tag
+            # Trái nếu là: M, M1, F1
+            # Phải nếu là: M2, F2, F (hoặc bất kỳ cái gì khác)
+            if raw_tag in ["M", "M1", "F1"]:
+                position = "LEFT"
+            else:
+                position = "RIGHT"
+
+            voice = self.male_voice if gender_letter == 'M' else self.female_voice
+            
             return {
-                "gender": gender_val,
-                "voice": self.male_voice if gender_val == 'M' else self.female_voice,
+                "position": position,
+                "voice": voice,
                 "es_text": re.sub(r'\s*\(\d+\)', '', parts[1].strip()),
                 "en_text": re.sub(r'\s*\(\d+\)', '', parts[2].strip())
             }
@@ -77,34 +92,32 @@ class VideoGenerator:
         lines.append(' '.join(current_line))
         return '\n'.join(lines)
 
-    def create_frame(self, es_text, en_text, gender, width=1280, height=720):
+    def create_frame(self, es_text, en_text, position, width=1280, height=720):
         img = Image.new('RGB', (width, height), color=(255, 245, 240))
         draw = ImageDraw.Draw(img)
         
-        # Tính toán cx (tâm ngang) dựa trên giới tính
         center_screen = width // 2
-        if gender == 'M':
-            cx = center_screen - (width // 4) # Dịch trái 1/4
+        # Di chuyển dựa trên position đã xác định ở parse_line
+        if position == "LEFT":
+            cx = center_screen - (width // 4)
         else:
-            cx = center_screen + (width // 4) # Dịch phải 1/4
+            cx = center_screen + (width // 4)
         
         cy = height // 2
         box_w, box_h = 320, 120
         main_box = [cx - box_w//2, cy - box_h//2, cx + box_w//2, cy + box_h//2]
         
-        # Vẽ box nhỏ
         draw.rounded_rectangle(main_box, radius=15, fill=(255, 240, 235), outline=(0, 128, 0), width=3)
 
-        # Fonts (Tỷ lệ 2/3)
         try:
             es_font = ImageFont.truetype("arial.ttf", 24) 
             en_font = ImageFont.truetype("arial.ttf", 16)
         except:
             es_font = en_font = ImageFont.load_default()
 
-        # Vẽ chữ
         wrapped_es = self.wrap_text(es_text, es_font, box_w - 40)
         wrapped_en = self.wrap_text(en_text, en_font, box_w - 40)
+        
         draw.text((cx, cy - 15), wrapped_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
         draw.text((cx, cy + 20), wrapped_en, fill="black", font=en_font, anchor="mm", align="center")
 
@@ -122,7 +135,7 @@ class VideoGenerator:
             data = self.parse_line(line)
             if not data: continue
 
-            # Tạo audio (như cũ)
+            # Tạo audio (giữ nguyên)
             clean_audio_text = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
             temp_audio = f"temp_{i}.mp3"
             asyncio.run(self.generate_audio(clean_audio_text, data['voice'], self.selected_speed.get(), temp_audio))
@@ -131,8 +144,8 @@ class VideoGenerator:
             silence = AudioClip(lambda t: [0, 0], duration=1.5, fps=44100)
             final_audio = concatenate_audioclips([audio_clip, silence])
 
-            # SỬA LỖI TẠI ĐÂY: Thêm data['gender'] vào tham số thứ 3
-            frame_bgr = self.create_frame(data['es_text'], data['en_text'], data['gender'])
+            # Truyền data['position'] vào đây
+            frame_bgr = self.create_frame(data['es_text'], data['en_text'], data['position'])
             frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
             
             video_segment = ImageClip(frame_rgb).set_duration(final_audio.duration)

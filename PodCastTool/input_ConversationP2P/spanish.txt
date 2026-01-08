@@ -1,5 +1,5 @@
 
 
-M|Entro.|Enter.
-F|Entro a la oficina a las nueve.|I enter the office at nine.
+M1|Entro.|Enter.
+M2|Entro a la oficina a las nueve.|I enter the office at nine.
 
