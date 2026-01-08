@@ -1,322 +1,264 @@
+import asyncio
+import edge_tts
+import os
+import re
+import cv2
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-import asyncio
-import os
-import subprocess
-import edge_tts
-import threading
-import re
+from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips, concatenate_audioclips, AudioClip
 
-# ---------- CONFIG ----------
-VIDEO_SIZE = "1920x1080"
-OUTPUT_DIR = "output"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+class VideoGenerator:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Language Lesson - Pattern Mode with Logo")
+        self.root.geometry("500x550")
 
-# Đường dẫn font (Hãy đảm bảo các font này tồn tại trên máy bạn)
-FONT_LATIN = "C\\:/Windows/Fonts/arial.ttf"
-FONT_CHINESE = "C\\:/Users/USER/AppData/Local/Microsoft/Windows/Fonts/NotoSansCJKsc-Regular.otf"
+        # Variables
+        self.output_dir = tk.StringVar(value=os.getcwd())
+        self.logo_path = tk.StringVar(value="")
+        self.selected_voice = tk.StringVar(value="es-ES-AlvaroNeural (Male)")
+        self.selected_speed = tk.StringVar(value="100%")
 
-LANG_VOICES = {
-    "Vietnamese": {
-        "Mặc định (Nam Minh & Hoài My)": {
-            "male": "vi-VN-NamMinhNeural", 
-            "female": "vi-VN-HoaiMyNeural"
-        }
-    },
-    "Chinese": {
-        "Yunxi & Xiaoxiao (Phổ thông)": {"male": "zh-CN-YunxiNeural", "female": "zh-CN-XiaoxiaoNeural"},
-        "Yunjian & Xiaoyi (Sâu lắng)": {"male": "zh-CN-YunjianNeural", "female": "zh-CN-XiaoyiNeural"},
-        "Yunfeng & Xiaoni (Tươi vui)": {"male": "zh-CN-YunfengNeural", "female": "zh-CN-XiaoniNeural"},
-    },
-    "Spanish": {
-        "Alvaro & Elvira (Tây Ban Nha)": {"male": "es-ES-AlvaroNeural", "female": "es-ES-ElviraNeural"},
-        "Tomas & Elena (Argentina)": {"male": "es-AR-TomasNeural", "female": "es-AR-ElenaNeural"},
-        "Jorge & Dalia (Mexico)": {"male": "es-MX-JorgeNeural", "female": "es-MX-DaliaNeural"},
-        "Lorenzo & Paloma (Colombia-US)": {"male": "es-CL-LorenzoNeural", "female": "es-US-PalomaNeural"},
-    }
-}
+        # UI
+        tk.Label(root, text="Pattern: ES -> 1.3s Gap -> EN -> ES -> ES", font=("Arial", 10, "italic")).pack(pady=10)
 
-WAVE_MODES = {
-    "Dạng vạch (Line)": "showwaves=s=800x200:mode=line:colors=white:draw=full",
-    "Dạng cột đặc (P2P)": "showwaves=s=800x200:mode=p2p:colors=white:draw=full",
-    "Dạng đối xứng (Center line)": "showwaves=s=800x200:mode=cline:colors=white:draw=full",
-    "Dạng điểm (Point)": "showwaves=s=800x200:mode=point:colors=white",
-    "Dạng sóng mảnh": "showwaves=s=800x200:mode=line:colors=white:draw=none",
-    "Dạng sóng mờ": "showwaves=s=800x200:mode=line:colors=white@0.4:draw=full",
-    "Dạng sóng dày": "showwaves=s=800x200:mode=line:colors=white,white:draw=full",
-    "Dạng thanh âm lượng (Bars)": "showvolume=f=0.5:w=800:h=200:t=0:b=4:v=0:c=white",
-    "Dạng thanh âm lượng mịn": "showvolume=f=0.1:w=800:h=200:t=0:b=2:v=0:c=white",
-}
+        # 1. Voice Selection
+        tk.Label(root, text="Select Spanish Voice:").pack()
+        voices = [
+            "es-ES-AlvaroNeural (Male)", "es-ES-ElviraNeural (Female)",
+            "es-MX-JorgeNeural (Male)", "es-MX-DaliaNeural (Female)",
+            "es-US-AlonsoNeural (Male)", "es-US-PalomaNeural (Female)",
+            "es-AR-TomasNeural (Male)", "es-CL-LorenzoNeural (Male)"
+        ]
+        self.voice_combo = ttk.Combobox(root, textvariable=self.selected_voice, values=voices, width=45, state="readonly")
+        self.voice_combo.pack(pady=5)
 
-selected_bg = None
-selected_logo = None
+        # 2. Speed Selection
+        tk.Label(root, text="Speech Speed:").pack()
+        speeds = ["60%", "70%", "80%", "90%", "100%"]
+        self.speed_combo = ttk.Combobox(root, textvariable=self.selected_speed, values=speeds, width=15, state="readonly")
+        self.speed_combo.pack(pady=5)
 
-# ---------- HELPER FUNCTIONS ----------
-def get_seconds(time_str):
-    h, m, s = time_str.split(':')
-    return int(h) * 3600 + int(m) * 60 + float(s)
+        # 3. Logo Selection
+        tk.Label(root, text="Watermark Logo (Optional):").pack(pady=(10, 0))
+        logo_frame = tk.Frame(root)
+        logo_frame.pack(pady=5)
+        tk.Entry(logo_frame, textvariable=self.logo_path, width=40).pack(side=tk.LEFT, padx=5)
+        tk.Button(logo_frame, text="Select Logo", command=self.browse_logo).pack(side=tk.LEFT)
 
-def format_srt_time(seconds):
-    td_h = int(seconds // 3600)
-    td_m = int((seconds % 3600) // 60)
-    td_s = int(seconds % 60)
-    td_ms = int((seconds - int(seconds)) * 1000)
-    return f"{td_h:02}:{td_m:02}:{td_s:02},{td_ms:03}"
+        # 4. Output Folder
+        tk.Label(root, text="Output Folder:").pack(pady=(10, 0))
+        folder_frame = tk.Frame(root)
+        folder_frame.pack(pady=5)
+        tk.Entry(folder_frame, textvariable=self.output_dir, width=40).pack(side=tk.LEFT, padx=5)
+        tk.Button(folder_frame, text="Browse", command=self.browse_folder).pack(side=tk.LEFT)
 
-def parse_input(text, lang):
-    dialogs = []
-    lines = [l.strip() for l in text.split("\n") if l.strip()]
-    for line in lines:
-        parts = line.split("|")
-        if lang == "Chinese" and len(parts) == 4:
-            dialogs.append((parts[0].strip(), parts[1].strip(), parts[2].strip(), parts[3].strip()))
-        elif lang != "Chinese" and len(parts) == 3:
-            dialogs.append((parts[0].strip(), parts[1].strip(), parts[2].strip()))
-    return dialogs
+        # 5. Action Button
+        self.btn = tk.Button(root, text="Select TXT & Start Generation", 
+                             bg="#4CAF50", fg="white", font=("Arial", 11, "bold"),
+                             command=self.start_process, padx=10, pady=10)
+        self.btn.pack(pady=30)
 
-async def generate_assets(dialogs, lang, voice_pack_name, rate_str):
-    speed_map = {"100%": "+0%", "90%": "-10%", "80%": "-20%", "70%": "-30%"}
-    rate = speed_map.get(rate_str, "+0%")
-    pack = LANG_VOICES[lang][voice_pack_name]
-    audio_files = []
-    srt_content = ""
-    timeline = 0.0
-    
-    for i, d in enumerate(dialogs):
-        role = d[0].upper()
-        voice = pack["male"] if role == "M" else pack["female"]
-        audio_path = os.path.join(OUTPUT_DIR, f"audio_{i}.mp3")
-        await edge_tts.Communicate(d[1], voice, rate=rate).save(audio_path)
-        
-        result = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", audio_path],
-            stdout=subprocess.PIPE, text=True
-        )
-        dur = float(result.stdout)
-        start_t, end_t = format_srt_time(timeline), format_srt_time(timeline + dur)
-        
-        # Vị trí: M trái, F phải
-        pos_tag = "{\\an4}" if role == "M" else "{\\an6}"
-        
-        # --- TÍNH TOÁN KÍCH THƯỚC CHỮ ---
-        # Chữ chính (ví dụ 16)
-        f_size_main = 16 if len(d[1]) <= 40 else 20
-        # Chữ dịch nhỏ hơn 20%
-        f_size_sub = int(f_size_main * 0.8)
-        # Chữ phiên âm (nếu có - dành cho tiếng Trung) nhỏ hơn nữa
-        f_size_extra = int(f_size_main * 0.6)
+        self.status_label = tk.Label(root, text="Ready", fg="blue")
+        self.status_label.pack()
 
-        # Xây dựng nội dung dòng sub bằng tag chuẩn ASS/SRT
-        # \N là xuống dòng
-        sub_line = f"{pos_tag}{{\\fs{f_size_main}}}{d[1]}\\N{{\\fs{f_size_sub}}}{d[2]}"
-        
-        if lang == "Chinese" and len(d) > 3: 
-            sub_line += f"\\N{{\\fs{f_size_extra}}}{d[3]}"
-            
-        srt_content += f"{i+1}\n{start_t} --> {end_t}\n{sub_line}\n\n"
-        audio_files.append(audio_path)
-        timeline += dur
-        
-    with open(os.path.join(OUTPUT_DIR, "subs.srt"), "w", encoding="utf-8") as f:
-        f.write(srt_content)
-    return audio_files, timeline
+    def browse_folder(self):
+        folder = filedialog.askdirectory()
+        if folder:
+            self.output_dir.set(folder)
 
-def build_video_ffmpeg_with_progress(audio_files, total_dur, lang, show_subtitles, wave_mode_key, logo_scale_val, progress_callback):
-    list_path = os.path.join(OUTPUT_DIR, "audio_list.txt")
-    with open(list_path, "w") as f:
-        for audio in audio_files: f.write(f"file '{os.path.abspath(audio)}'\n")
-            
-    full_audio = os.path.join(OUTPUT_DIR, "full_audio.mp3")
-    subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list_path, "-c", "copy", full_audio], check=True)
+    def browse_logo(self):
+        file = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg *.bmp")])
+        if file:
+            self.logo_path.set(file)
 
-    srt_path = os.path.join(OUTPUT_DIR, "subs.srt").replace("\\", "/")
-    current_font = FONT_CHINESE if lang == "Chinese" else FONT_LATIN
-    
-    # BorderStyle=4 tạo hộp nền. 
-    # Outline chính là độ dày lề của hộp nếu BorderStyle=4.
-    sub_style = (
-        f"subtitles='{srt_path}':force_style="
-        f"'Fontname={current_font},"
-        f"FontSize=24," # Font size gốc để các thẻ \fs tính toán dựa trên đó
-        f"PrimaryColour=&H000000,"
-        f"BorderStyle=4,"
-        f"BackColour=&HFFFFFF,"
-        f"OutlineColour=&HFFFFFF,"
-        f"Outline=2,"
-        f"Shadow=0,"
-        f"MarginV=100,"
-        f"MarginL=60,"
-        f"MarginR=60'"
-    )
-    
-    wave_filter = WAVE_MODES[wave_mode_key]
-
-    # Tính toán tỉ lệ logo (chia cho 100 vì scale GUI là phần trăm)
-    scale_factor = logo_scale_val / 100.0
-
-    filter_chain = (
-        f"[0:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080[bg];"
-        f"[1:a]{wave_filter}[wave];"
-        f"[bg][wave]overlay=(W-w)/2:600[v_base];"
-    )
-
-    logo_input = []
-    current_v = "[v_base]"
-
-    if selected_logo:
-        logo_input = ["-i", selected_logo]
-        # Sử dụng biến scale_factor từ GUI
-        filter_chain += f"[2:v]scale=iw*{scale_factor}:-1[logo_scaled];"
-        filter_chain += f"{current_v}[logo_scaled]overlay=W-w-50:50[v_logo];"
-        current_v = "[v_logo]"
-
-    if show_subtitles: 
-        filter_chain += f"{current_v}{sub_style},fps=12[v]"
-    else: 
-        filter_chain += f"{current_v}fps=12[v]"
-
-    bg_input = ["-f", "lavfi", "-i", "color=c=black:s=1920x1080"]
-    if selected_bg:
-        if selected_bg.lower().endswith((".mp4", ".mov")): bg_input = ["-stream_loop", "-1", "-i", selected_bg]
-        else: bg_input = ["-loop", "1", "-i", selected_bg]
-
-    cmd = ["ffmpeg", "-y", *bg_input, "-i", full_audio, *logo_input, 
-           "-filter_complex", filter_chain,
-           "-map", "[v]", "-map", "1:a", "-c:v", "libx264", "-preset", "ultrafast",
-           "-t", str(total_dur), os.path.join(OUTPUT_DIR, f"podcast_{lang}.mp4")]
-    
-    process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, universal_newlines=True, encoding='utf-8')
-    time_pattern = re.compile(r"time=(\d{2}:\d{2}:\d{2}\.\d{2})")
-
-    while True:
-        line = process.stdout.readline()
-        if not line: break
-        match = time_pattern.search(line)
+    def parse_line(self, line):
+        pattern = r"(.+?)\s*\((\d+)\)\.\|(.+?)\s*\((\d+)\)\."
+        match = re.search(pattern, line)
         if match:
-            current_seconds = get_seconds(match.group(1))
-            progress_callback(min(int((current_seconds / total_dur) * 100), 100))
-    process.wait()
+            return {
+                "es_text": match.group(1).strip(),
+                "es_count": int(match.group(2)),
+                "en_text": match.group(3).strip(),
+                "en_count": int(match.group(4))
+            }
+        return None
 
-    try:
-        for audio in audio_files:
-            if os.path.exists(audio): os.remove(audio)
-        if os.path.exists(full_audio): os.remove(full_audio)
-        if os.path.exists(list_path): os.remove(list_path)
-    except: pass
+    def make_silence(self, duration):
+        return AudioClip(lambda t: [0, 0], duration=max(0.1, duration), fps=15)
 
-    return cmd[-1]
+    async def generate_audio(self, text, voice_str, speed_str, filename):
+        speed_val = int(speed_str.replace("%", ""))
+        rate_val = speed_val - 100
+        rate_str = f"{rate_val:+d}%" 
+        voice = voice_str.split(" ")[0]
+        communicate = edge_tts.Communicate(text, voice, rate=rate_str)
+        await communicate.save(filename)
 
-# ---------- GUI FUNCTIONS ----------
-def update_voice_options(*args):
-    lang = lang_var.get()
-    packs = list(LANG_VOICES[lang].keys())
-    voice_pack_var.set(packs[0])
-    menu = voice_menu['menu']
-    menu.delete(0, 'end')
-    for pack in packs:
-        menu.add_command(label=pack, command=lambda p=pack: voice_pack_var.set(p))
+    def wrap_text(self, text, font, max_width):
+        """Helper to split text into lines that fit the box width."""
+        words = text.split(' ')
+        lines = []
+        current_line = []
 
-def run_processing():
-    lang, voice_pack = lang_var.get(), voice_pack_var.get()
-    text = text_box.get("1.0", tk.END).strip()
-    dialogs = parse_input(text, lang)
-    if not dialogs: return messagebox.showerror("Lỗi", "Định dạng sai!")
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            # getbbox returns (left, top, right, bottom)
+            w = font.getbbox(test_line)[2]
+            if w <= max_width:
+                current_line.append(word)
+            else:
+                lines.append(' '.join(current_line))
+                current_line = [word]
+        lines.append(' '.join(current_line))
+        return '\n'.join(lines)
 
-    try:
-        percent_label.config(text="Đang tạo giọng nói...")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        audio_files, total_dur = loop.run_until_complete(generate_assets(dialogs, lang, voice_pack, speed_var.get()))
+    def create_frame(self, es_text, en_text, width=1280, height=720):
+        # 1. Main Background: Seashell White
+        img = Image.new('RGB', (width, height), color=(255, 245, 240))
+        draw = ImageDraw.Draw(img)
+
+        # 2. Dimensions and Positioning
+        margin_x = 80
+        inner_box_height = 350 # Tăng chiều cao box một chút để chứa cả 2 dòng chữ
         
-        out = build_video_ffmpeg_with_progress(
-            audio_files, total_dur, lang, show_sub_var.get(), wave_var.get(), logo_size_scale.get(),
-            lambda v: (progress_bar.configure(value=v), percent_label.config(text=f"Đang Render: {v}%"), root.update_idletasks())
-        )
-        messagebox.showinfo("Thành công", f"Video lưu tại:\n{out}")
-    except Exception as e: messagebox.showerror("Lỗi", str(e))
-    finally:
-        generate_btn.config(state=tk.NORMAL)
-        percent_label.config(text="Sẵn sàng")
+        # 3. Outer Container Box
+        container_box = [margin_x - 20, 60, width - margin_x + 20, 660]
+        draw.rounded_rectangle(container_box, radius=35, fill="white", outline=(200, 200, 200), width=2)
 
-def generate():
-    generate_btn.config(state=tk.DISABLED)
-    threading.Thread(target=run_processing, daemon=True).start()
+        # 4. Main Box (Sử dụng tọa độ của es_box cũ nhưng làm nó to hơn hoặc căn giữa)
+        # Căn giữa box này vào giữa container
+        main_box_y_start = 180 
+        main_box = [margin_x + 20, main_box_y_start, width - margin_x - 20, main_box_y_start + inner_box_height]
+        draw.rounded_rectangle(main_box, radius=25, fill=(255, 240, 235), outline=(0, 128, 0), width=4)
 
-def choose_background():
-    global selected_bg
-    path = filedialog.askopenfilename()
-    if path:
-        selected_bg = path
-        bg_label.config(text=os.path.basename(path))
+        # 5. Fonts
+        en_size = 40 # Giảm nhẹ size tiếng Anh để hài hòa
+        es_size = 72 # Tiếng Tây Ban Nha to nổi bật
+        try:
+            es_font = ImageFont.truetype("arial.ttf", es_size)
+            en_font = ImageFont.truetype("arial.ttf", en_size)
+        except:
+            es_font = ImageFont.load_default()
+            en_font = ImageFont.load_default()
 
-def choose_logo():
-    global selected_logo
-    path = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg *.bmp")])
-    if path:
-        selected_logo = path
-        logo_label.config(text=os.path.basename(path))
+        # 6. Wrapped Text
+        max_text_width = (width - margin_x * 2) - 100
+        wrapped_es = self.wrap_text(es_text, es_font, max_text_width)
+        wrapped_en = self.wrap_text(en_text, en_font, max_text_width)
 
-# ---------- GUI LAYOUT ----------
-root = tk.Tk()
-root.title("AI Podcast Generator - Logo Custom Size")
-root.geometry("750x800")
+        # 7. Tính toán vị trí để xếp chồng chữ (Stacking)
+        # Lấy điểm chính giữa của Box làm tâm
+        center_x = main_box[0] + (main_box[2] - main_box[0]) // 2
+        center_y = main_box[1] + (main_box[3] - main_box[1]) // 2
 
-cfg_frame = tk.LabelFrame(root, text=" Cấu hình ", padx=10, pady=10)
-cfg_frame.pack(pady=10, fill="x", padx=20)
+        # Khoảng cách giữa 2 dòng chữ
+        line_spacing = 30 
 
-tk.Label(cfg_frame, text="Ngôn ngữ:").grid(row=0, column=0, sticky="w")
-lang_var = tk.StringVar(value="Vietnamese")
-lang_var.trace('w', update_voice_options)
-tk.OptionMenu(cfg_frame, lang_var, *LANG_VOICES.keys()).grid(row=0, column=1, sticky="w")
+        # Vị trí Spanish (nằm trên tâm một chút)
+        es_pos = (center_x, center_y - line_spacing)
+        # Vị trí English (nằm dưới tâm một chút)
+        en_pos = (center_x, center_y + (es_size // 2) + line_spacing)
 
-tk.Label(cfg_frame, text="Giọng:").grid(row=0, column=2, padx=10, sticky="w")
-voice_pack_var = tk.StringVar()
-voice_menu = tk.OptionMenu(cfg_frame, voice_pack_var, "")
-voice_menu.grid(row=0, column=3, sticky="w")
+        # Vẽ chữ Spanish (Dòng trên)
+        draw.text(es_pos, wrapped_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
+        
+        # Vẽ chữ English (Dòng dưới)
+        draw.text(en_pos, wrapped_en, fill="black", font=en_font, anchor="mm", align="center")
 
-tk.Label(cfg_frame, text="Dạng Waveform:").grid(row=1, column=0, pady=5, sticky="w")
-wave_var = tk.StringVar(value="Dạng vạch (Line)")
-tk.OptionMenu(cfg_frame, wave_var, *WAVE_MODES.keys()).grid(row=1, column=1, sticky="w")
+        # 8. Logo Logic
+        if self.logo_path.get() and os.path.exists(self.logo_path.get()):
+            try:
+                logo = Image.open(self.logo_path.get()).convert("RGBA")
+                logo_w = int(width * 0.08)
+                w_percent = (logo_w / float(logo.size[0]))
+                logo_h = int((float(logo.size[1]) * float(w_percent)))
+                logo = logo.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
+                img.paste(logo, (width - logo_w - 45, 15), logo)
+            except: pass
 
-tk.Label(cfg_frame, text="Tốc độ:").grid(row=1, column=2, padx=10, sticky="w")
-speed_var = tk.StringVar(value="100%")
-tk.OptionMenu(cfg_frame, speed_var, "100%", "90%", "80%", "70%").grid(row=1, column=3, sticky="w")
+        return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
-show_sub_var = tk.BooleanVar(value=True)
-tk.Checkbutton(cfg_frame, text="Hiện Subtitle", variable=show_sub_var).grid(row=2, column=0, sticky="w")
+    def process_video(self, file_path):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = [line for line in f.readlines() if line.strip()]
 
-update_voice_options()
+        all_video_segments = []
+        fps = 4
+        out_folder = self.output_dir.get()
+        final_path = os.path.join(out_folder, "pattern_lesson_wrapped.mp4")
 
-# Frame chọn File Nền & Logo & Size
-file_frame = tk.LabelFrame(root, text=" Tài nguyên & Logo ", padx=10, pady=10)
-file_frame.pack(pady=5, fill="x", padx=20)
+        for i, line in enumerate(lines):
+            data = self.parse_line(line)
+            if not data: continue
 
-# Background
-tk.Button(file_frame, text="Chọn Nền (Ảnh/Video)", command=choose_background).grid(row=0, column=0, padx=5, sticky="w")
-bg_label = tk.Label(file_frame, text="Chưa chọn nền", fg="blue", width=40, anchor="w")
-bg_label.grid(row=0, column=1, columnspan=2)
+            # --- AUDIO CLEANING STEP ---
+            # We remove punctuation ONLY for the audio generation so it's not read aloud
+            # This regex replaces ?, /, ., (, ), and other symbols with an empty space
+            clean_es_audio = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
+            clean_en_audio = re.sub(r'[?/.()¿¡!]', '', data['en_text'])
 
-# Logo
-tk.Button(file_frame, text="Chọn Logo", command=choose_logo).grid(row=1, column=0, padx=5, pady=10, sticky="w")
-logo_label = tk.Label(file_frame, text="Chưa chọn logo", fg="green", width=40, anchor="w")
-logo_label.grid(row=1, column=1, columnspan=2)
+            es_temp = f"es_temp_{i}.mp3"
+            en_temp = f"en_temp_{i}.mp3"
+            
+            # Use the 'clean' versions for audio generation
+            asyncio.run(self.generate_audio(clean_es_audio, self.selected_voice.get(), self.selected_speed.get(), es_temp))
+            asyncio.run(self.generate_audio(clean_en_audio, "en-US-GuyNeural", self.selected_speed.get(), en_temp))
 
-# Kích thước Logo
-tk.Label(file_frame, text="Kích thước Logo (%):").grid(row=2, column=0, padx=5, sticky="w")
-logo_size_scale = tk.Scale(file_frame, from_=5, to=50, orient="horizontal", length=200)
-logo_size_scale.set(15) # Mặc định 15%
-logo_size_scale.grid(row=2, column=1, sticky="w")
+            es_audio = AudioFileClip(es_temp)
+            en_audio = AudioFileClip(en_temp)
 
-text_box = tk.Text(root, width=85, height=12, font=("Consolas", 10))
-text_box.pack(pady=10, padx=20)
-text_box.insert("1.0", "M|Chào bạn, Hôm nay thế nào| Hi, how are you today?\nF|Tôi khỏe|I am good.")
+            line_audio_list = [es_audio, self.make_silence(0.5), self.make_silence(1.3)]
+            
+            for _ in range(data['en_count']):
+                line_audio_list.extend([en_audio, self.make_silence(0.5)])
+                
+            if data['es_count'] > 1:
+                for _ in range(data['es_count'] - 1):
+                    line_audio_list.extend([es_audio, self.make_silence(0.5)])
+            
+            final_audio = concatenate_audioclips(line_audio_list)
+            temp_avi = f"video_temp_{i}.avi"
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            out = cv2.VideoWriter(temp_avi, fourcc, fps, (1280, 720))
+            
+            # --- VISUAL STEP ---
+            # We use the ORIGINAL 'data' text for the frame so the punctuation STILL SHOWS
+            frame = self.create_frame(data['es_text'], data['en_text'])
+            
+            for _ in range(int(final_audio.duration * fps) + 1):
+                out.write(frame)
+            out.release()
 
-progress_bar = ttk.Progressbar(root, orient="horizontal", length=500, mode="determinate")
-progress_bar.pack(pady=5)
-percent_label = tk.Label(root, text="Sẵn sàng")
-percent_label.pack()
+            segment = VideoFileClip(temp_avi).set_audio(final_audio)
+            all_video_segments.append(segment)
 
-generate_btn = tk.Button(root, text="BẮT ĐẦU RENDER", command=generate, bg="#27ae60", fg="white", font=('Arial', 12, 'bold'), height=2, width=30)
-generate_btn.pack(pady=15)
+        if all_video_segments:
+            final_result = concatenate_videoclips(all_video_segments)
+            final_result.write_videofile(final_path, codec="libx264", audio_codec="aac", fps=fps)
+            
+            for i in range(len(lines)):
+                for f in [f"es_temp_{i}.mp3", f"en_temp_{i}.mp3", f"video_temp_{i}.avi"]:
+                    if os.path.exists(f):
+                        try: os.remove(f)
+                        except: pass
+            
+            messagebox.showinfo("Success", f"Video saved to:\n{final_path}")
 
-root.mainloop()
+    def start_process(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
+        if file_path:
+            self.status_label.config(text="Generating branded video...", fg="red")
+            self.root.update()
+            try:
+                self.process_video(file_path)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed: {e}")
+            self.status_label.config(text="Ready", fg="blue")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = VideoGenerator(root)
+    root.mainloop()
