@@ -188,52 +188,79 @@ class VideoGenerator:
         all_video_segments = []
         fps = 4
         out_folder = self.output_dir.get()
-        final_path = os.path.join(out_folder, "pattern_lesson_wrapped.mp4")
+        # Đặt tên file đầu ra rõ ràng
+        final_path = os.path.join(out_folder, "spanish_lesson_final.mp4")
 
         for i, line in enumerate(lines):
             data = self.parse_line(line)
             if not data: continue
 
-            # --- AUDIO CLEANING STEP ---
-            # We remove punctuation ONLY for the audio generation so it's not read aloud
-            # This regex replaces ?, /, ., (, ), and other symbols with an empty space
+            # 1. Chỉ tạo Audio tiếng Tây Ban Nha
             clean_es_audio = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
-            clean_en_audio = re.sub(r'[?/.()¿¡!]', '', data['en_text'])
-
             es_temp = f"es_temp_{i}.mp3"
-            en_temp = f"en_temp_{i}.mp3"
             
-            # Use the 'clean' versions for audio generation
             asyncio.run(self.generate_audio(clean_es_audio, self.selected_voice.get(), self.selected_speed.get(), es_temp))
-            asyncio.run(self.generate_audio(clean_en_audio, "en-US-GuyNeural", self.selected_speed.get(), en_temp))
-
             es_audio = AudioFileClip(es_temp)
-            en_audio = AudioFileClip(en_temp)
 
-            line_audio_list = [es_audio, self.make_silence(0.5), self.make_silence(1.3)]
-            
-            for _ in range(data['en_count']):
-                line_audio_list.extend([en_audio, self.make_silence(0.5)])
-                
+            # Tạo danh sách âm thanh: ES -> Nghỉ 1.5s -> ES (nếu có count > 1)
+            line_audio_list = [es_audio, self.make_silence(1.5)]
             if data['es_count'] > 1:
                 for _ in range(data['es_count'] - 1):
-                    line_audio_list.extend([es_audio, self.make_silence(0.5)])
+                    line_audio_list.extend([es_audio, self.make_silence(1.0)])
             
             final_audio = concatenate_audioclips(line_audio_list)
-            temp_avi = f"video_temp_{i}.avi"
-            fourcc = cv2.VideoWriter_fourcc(*'XVID')
-            out = cv2.VideoWriter(temp_avi, fourcc, fps, (1280, 720))
             
-            # --- VISUAL STEP ---
-            # We use the ORIGINAL 'data' text for the frame so the punctuation STILL SHOWS
+            # 2. Tạo Video tạm (Đổi sang .mp4 và dùng codec 'mp4v')
+            temp_mp4 = f"video_temp_{i}.mp4"
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v') 
+            out = cv2.VideoWriter(temp_mp4, fourcc, fps, (1280, 720))
+            
+            # Tạo frame hình ảnh (Chứa cả ES và EN)
             frame = self.create_frame(data['es_text'], data['en_text'])
             
-            for _ in range(int(final_audio.duration * fps) + 1):
+            # Ghi frame vào video dựa trên độ dài audio
+            num_frames = int(final_audio.duration * fps)
+            for _ in range(num_frames):
                 out.write(frame)
             out.release()
 
-            segment = VideoFileClip(temp_avi).set_audio(final_audio)
-            all_video_segments.append(segment)
+            # 3. Kết hợp Audio và Video
+            try:
+                # Thêm nỗ lực đọc lại nếu file chưa kịp giải phóng
+                segment = VideoFileClip(temp_mp4).set_audio(final_audio)
+                all_video_segments.append(segment)
+            except Exception as e:
+                print(f"Lỗi tại dòng {i}: {e}")
+                continue
+
+        # 4. Xuất file cuối cùng
+        if all_video_segments:
+            final_result = concatenate_videoclips(all_video_segments, method="compose")
+            final_result.write_videofile(final_path, codec="libx264", audio_codec="aac", fps=fps)
+            
+            # Dọn dẹp
+            for i in range(len(lines)):
+                for f in [f"es_temp_{i}.mp3", f"video_temp_{i}.mp4"]:
+                    if os.path.exists(f):
+                        try:
+                            # Đảm bảo đóng clip trước khi xóa
+                            os.remove(f)
+                        except: pass
+            
+            messagebox.showinfo("Success", f"Video saved to:\n{final_path}")
+
+        if all_video_segments:
+            final_result = concatenate_videoclips(all_video_segments)
+            final_result.write_videofile(final_path, codec="libx264", audio_codec="aac", fps=fps)
+            
+            # Dọn dẹp file tạm
+            for i in range(len(lines)):
+                for f in [f"es_temp_{i}.mp3", f"video_temp_{i}.avi"]:
+                    if os.path.exists(f):
+                        try: os.remove(f)
+                        except: pass
+            
+            messagebox.showinfo("Success", f"Video saved to:\n{final_path}")
 
         if all_video_segments:
             final_result = concatenate_videoclips(all_video_segments)
