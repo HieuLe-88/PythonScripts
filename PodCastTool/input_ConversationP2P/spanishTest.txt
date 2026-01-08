@@ -1,0 +1,4 @@
+M|Hola, ¿puedo sentarme aquí?|Hi, can I sit here?
+F|Sí, claro, adelante.|Yes, of course, go ahead.
+M|Gracias, hace mucho calor.|Thanks, it’s very hot.
+F|Sí, el verano es fuerte.|Yes, summer is strong.

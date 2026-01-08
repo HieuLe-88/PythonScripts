@@ -1,4 +1,35 @@
-M|Además, quiero probar la comida local.|Also, I want to try the local food.
-F|Yo también, la gastronomía es fundamental.|Me too, gastronomy is essential.
-M|Entonces hagamos un itinerario detallado.|Then let's make a detailed itinerary.
-F|De acuerdo, estoy muy emocionada.|Alright, I'm very excited.
+M|Hola, ¿puedo sentarme aquí?|Hi, can I sit here?
+F|Sí, claro, adelante.|Yes, of course, go ahead.
+M|Gracias, hace mucho calor.|Thanks, it’s very hot.
+F|Sí, el verano es fuerte.|Yes, summer is strong.
+M|¿Quieres tomar algo?|Do you want to drink something?
+F|Sí, quiero un café.|Yes, I want a coffee.
+M|Yo prefiero té frío.|I prefer iced tea.
+M|¿Llamamos al camarero?|Shall we call the waiter?
+F|Sí, por favor.|Yes, please.
+M|Disculpe, dos bebidas.|Excuse me, two drinks.
+M|Un café y un té.|One coffee and one tea.
+F|Gracias.|Thank you.
+M|¿Vienes aquí mucho?|Do you come here often?
+F|Sí, casi cada día.|Yes, almost every day.
+M|¿Te gusta este lugar?|Do you like this place?
+F|Sí, es tranquilo.|Yes, it’s quiet.
+M|Y el café es bueno.|And the coffee is good.
+F|Sí, muy rico.|Yes, very tasty.
+M|¿Trabajas cerca de aquí?|Do you work near here?
+F|Sí, en la oficina.|Yes, in the office.
+M|Yo trabajo desde casa.|I work from home.
+M|Es más cómodo.|It’s more comfortable.
+F|Sí, pero más solo.|Yes, but lonelier.
+M|Tienes razón.|You’re right.
+M|¿Usas Wi-Fi aquí?|Do you use Wi-Fi here?
+F|Sí, es gratis.|Yes, it’s free.
+M|Eso es perfecto.|That’s perfect.
+M|¿Qué comes normalmente?|What do you usually eat?
+F|Un sándwich pequeño.|A small sandwich.
+M|Yo pido pastel.|I order cake.
+F|Suena delicioso.|Sounds delicious.
+M|Aquí vienen las bebidas.|Here come the drinks.
+F|Perfecto, gracias.|Perfect, thanks.
+M|Disfruta tu café.|Enjoy your coffee.
+F|Igualmente.|Likewise.
