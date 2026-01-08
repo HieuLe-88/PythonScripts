@@ -12,10 +12,10 @@ from moviepy.editor import AudioFileClip, concatenate_videoclips, concatenate_au
 class VideoGenerator:
     def __init__(self, root):
         self.root = root
-        self.root.title("Spanish Lesson - 6 Personalities Mode")
-        self.root.geometry("650x800")
+        self.root.title("Spanish Lesson - 6 Voices & Custom Background")
+        self.root.geometry("650x850")
 
-        # Khai báo biến giọng đọc cho từng nhân vật
+        # 1. Khai báo biến
         self.voice_vars = {
             "M":  tk.StringVar(value="es-ES-AlvaroNeural"),
             "M1": tk.StringVar(value="es-MX-JorgeNeural"),
@@ -24,179 +24,163 @@ class VideoGenerator:
             "F1": tk.StringVar(value="es-MX-DaliaNeural"),
             "F2": tk.StringVar(value="es-US-PalomaNeural")
         }
-        
-        self.output_dir = tk.StringVar(value=os.getcwd())
+        self.bg_path = tk.StringVar(value="")
         self.logo_path = tk.StringVar(value="")
+        self.output_dir = tk.StringVar(value=os.getcwd())
         self.selected_speed = tk.StringVar(value="100%")
 
-        # Danh sách các giọng đọc khả dụng
-        voices = [
-            "es-ES-AlvaroNeural", "es-ES-ElviraNeural", 
-            "es-MX-JorgeNeural", "es-MX-DaliaNeural", 
-            "es-US-AlonsoNeural", "es-US-PalomaNeural",
-            "es-AR-TomasNeural", "es-CL-LorenzoNeural"
-        ]
+        voices = ["es-ES-AlvaroNeural", "es-ES-ElviraNeural", "es-MX-JorgeNeural", 
+                  "es-MX-DaliaNeural", "es-US-AlonsoNeural", "es-US-PalomaNeural"]
 
-        tk.Label(root, text=" CÀI ĐẶT GIỌNG ĐỌC RIÊNG BIỆT", font=("Arial", 12, "bold")).pack(pady=10)
+        # 2. Giao diện chọn giọng
+        tk.Label(root, text=" CÀI ĐẶT GIỌNG ĐỌC", font=("Arial", 12, "bold")).pack(pady=10)
+        v_frame = tk.Frame(root)
+        v_frame.pack()
+        row = 0
+        for tag, var in self.voice_vars.items():
+            tk.Label(v_frame, text=f"Giọng {tag}:").grid(row=row, column=0, padx=5, pady=2, sticky="e")
+            ttk.Combobox(v_frame, textvariable=var, values=voices, width=25).grid(row=row, column=1, padx=5, pady=2)
+            row += 1
 
-        # Tạo khung lưới (Grid) để xếp 6 ô chọn giọng
-        voice_frame = tk.Frame(root)
-        voice_frame.pack(pady=10)
-
-        # Xếp các ô chọn giọng: Cột 1 cho Nam (M), Cột 2 cho Nữ (F)
-        row_idx = 0
-        for tag in ["M", "M1", "M2", "F", "F1", "F2"]:
-            label_text = f"Giọng cho {tag}:"
-            lbl = tk.Label(voice_frame, text=label_text)
-            lbl.grid(row=row_idx, column=0, padx=10, pady=5, sticky="e")
-            
-            cb = ttk.Combobox(voice_frame, textvariable=self.voice_vars[tag], values=voices, width=25)
-            cb.grid(row=row_idx, column=1, padx=10, pady=5)
-            row_idx += 1
-
-        # --- Các cài đặt khác ---
-        tk.Frame(root, height=2, bd=1, relief=tk.SUNKEN).pack(fill=tk.X, padx=20, pady=10)
+        # 3. Giao diện chọn File Nền & Logo
+        tk.Frame(root, height=2, bd=1, relief=tk.SUNKEN).pack(fill=tk.X, padx=20, pady=15)
         
-        tk.Label(root, text="Speech Speed:").pack()
-        ttk.Combobox(root, textvariable=self.selected_speed, values=["80%", "90%", "100%"], width=10).pack()
+        # Background Chọn
+        bg_frame = tk.Frame(root)
+        bg_frame.pack(pady=5)
+        tk.Label(bg_frame, text="Background Image:").pack(side=tk.LEFT)
+        tk.Entry(bg_frame, textvariable=self.bg_path, width=30).pack(side=tk.LEFT, padx=5)
+        tk.Button(bg_frame, text="Browse", command=self.browse_bg).pack(side=tk.LEFT)
 
-        tk.Button(root, text="Chọn Logo", command=self.browse_logo).pack(pady=5)
-        tk.Button(root, text="Chọn Thư mục lưu", command=self.browse_folder).pack(pady=5)
+        # Logo Chọn
+        logo_frame = tk.Frame(root)
+        logo_frame.pack(pady=5)
+        tk.Label(logo_frame, text="Watermark Logo:  ").pack(side=tk.LEFT)
+        tk.Entry(logo_frame, textvariable=self.logo_path, width=30).pack(side=tk.LEFT, padx=5)
+        tk.Button(logo_frame, text="Browse", command=self.browse_logo).pack(side=tk.LEFT)
 
-        self.btn = tk.Button(root, text="BẮT ĐẦU TẠO VIDEO", bg="#2196F3", fg="white", font=("Arial", 12, "bold"), command=self.start_process, padx=30, pady=10)
+        # Folder lưu
+        tk.Button(root, text="Select Output Folder", command=self.browse_folder).pack(pady=10)
+
+        # 4. Nút bắt đầu
+        self.btn = tk.Button(root, text="START GENERATION", bg="#2196F3", fg="white", 
+                             font=("Arial", 12, "bold"), command=self.start_process, padx=30, pady=10)
         self.btn.pack(pady=20)
-        
         self.status_label = tk.Label(root, text="Ready", fg="blue")
         self.status_label.pack()
 
-    def browse_folder(self):
-        folder = filedialog.askdirectory()
-        if folder: self.output_dir.set(folder)
+    def browse_bg(self):
+        file = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg")])
+        if file: self.bg_path.set(file)
 
     def browse_logo(self):
         file = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg")])
         if file: self.logo_path.set(file)
 
+    def browse_folder(self):
+        folder = filedialog.askdirectory()
+        if folder: self.output_dir.set(folder)
+
     def parse_line(self, line):
         parts = line.split("|")
         if len(parts) >= 3:
-            tag = parts[0].strip().upper() # M, M1, M2, F, F1, F2
-            
-            # Xác định vị trí (như quy tắc cũ)
-            if tag in ["M", "M1", "F1"]:
-                position = "LEFT"
-            else:
-                position = "RIGHT"
-
-            # Lấy giọng đã chọn từ GUI, nếu tag lạ thì dùng giọng M mặc định
+            tag = parts[0].strip().upper()
+            pos = "LEFT" if tag in ["M", "M1", "F1"] else "RIGHT"
             voice = self.voice_vars.get(tag, self.voice_vars["M"]).get()
-
             return {
-                "position": position,
-                "voice": voice,
+                "position": pos, "voice": voice,
                 "es_text": re.sub(r'\s*\(\d+\)', '', parts[1].strip()),
                 "en_text": re.sub(r'\s*\(\d+\)', '', parts[2].strip())
             }
         return None
-    
-    async def generate_audio(self, text, voice, speed_str, filename):
-        rate = f"{int(speed_str.replace('%', '')) - 100:+d}%"
-        await edge_tts.Communicate(text, voice, rate=rate).save(filename)
-
-    def wrap_text(self, text, font, max_width):
-        words = text.split(' ')
-        lines, current_line = [], []
-        for word in words:
-            test_line = ' '.join(current_line + [word])
-            if font.getbbox(test_line)[2] <= max_width:
-                current_line.append(word)
-            else:
-                lines.append(' '.join(current_line))
-                current_line = [word]
-        lines.append(' '.join(current_line))
-        return '\n'.join(lines)
 
     def create_frame(self, es_text, en_text, position, width=1280, height=720):
-        img = Image.new('RGB', (width, height), color=(255, 245, 240))
-        draw = ImageDraw.Draw(img)
-        
-        center_screen = width // 2
-        # Di chuyển dựa trên position đã xác định ở parse_line
-        if position == "LEFT":
-            cx = center_screen - (width // 4)
+        # Kiểm tra nếu có background tùy chỉnh
+        if self.bg_path.get() and os.path.exists(self.bg_path.get()):
+            img = Image.open(self.bg_path.get()).convert('RGB')
+            img = img.resize((width, height), Image.Resampling.LANCZOS)
         else:
-            cx = center_screen + (width // 4)
+            img = Image.new('RGB', (width, height), color=(255, 245, 240))
         
+        draw = ImageDraw.Draw(img)
+        cx = (width // 4) if position == "LEFT" else (3 * width // 4)
         cy = height // 2
         box_w, box_h = 320, 120
         main_box = [cx - box_w//2, cy - box_h//2, cx + box_w//2, cy + box_h//2]
-        
+
+        # Vẽ Box (có độ trong suốt nhẹ nếu dùng nền ảnh)
         draw.rounded_rectangle(main_box, radius=15, fill=(255, 240, 235), outline=(0, 128, 0), width=3)
 
         try:
-            es_font = ImageFont.truetype("arial.ttf", 24) 
+            es_font = ImageFont.truetype("arial.ttf", 24)
             en_font = ImageFont.truetype("arial.ttf", 16)
         except:
             es_font = en_font = ImageFont.load_default()
 
-        wrapped_es = self.wrap_text(es_text, es_font, box_w - 40)
-        wrapped_en = self.wrap_text(en_text, en_font, box_w - 40)
-        
-        draw.text((cx, cy - 15), wrapped_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
-        draw.text((cx, cy + 20), wrapped_en, fill="black", font=en_font, anchor="mm", align="center")
+        # Chia dòng và vẽ chữ
+        def wrap(t, f, w):
+            words = t.split(' ')
+            l, cur = [], []
+            for wd in words:
+                if f.getbbox(' '.join(cur + [wd]))[2] <= w: cur.append(wd)
+                else: l.append(' '.join(cur)); cur = [wd]
+            l.append(' '.join(cur))
+            return '\n'.join(l)
+
+        w_es = wrap(es_text, es_font, box_w - 40)
+        w_en = wrap(en_text, en_font, box_w - 40)
+        draw.text((cx, cy - 15), w_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
+        draw.text((cx, cy + 20), w_en, fill="black", font=en_font, anchor="mm", align="center")
+
+        # Vẽ Logo
+        if self.logo_path.get() and os.path.exists(self.logo_path.get()):
+            logo = Image.open(self.logo_path.get()).convert("RGBA")
+            logo.thumbnail((70, 70))
+            img.paste(logo, (width - 100, 30), logo)
 
         return np.array(img)
 
+    async def generate_audio(self, text, voice, speed_str, filename):
+        rate = f"{int(speed_str.replace('%', '')) - 100:+d}%"
+        await edge_tts.Communicate(text, voice, rate=rate).save(filename)
+
     def process_video(self, file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
-            lines = [line for line in f.readlines() if line.strip()]
+            lines = [l for l in f.readlines() if l.strip()]
 
         all_segments = []
-        out_folder = self.output_dir.get()
-        final_output = os.path.join(out_folder, "gender_lesson.mp4")
-
         for i, line in enumerate(lines):
             data = self.parse_line(line)
             if not data: continue
 
-            # Tạo audio (giữ nguyên)
-            clean_audio_text = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
             temp_audio = f"temp_{i}.mp3"
-            asyncio.run(self.generate_audio(clean_audio_text, data['voice'], self.selected_speed.get(), temp_audio))
+            clean_txt = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
+            asyncio.run(self.generate_audio(clean_txt, data['voice'], self.selected_speed.get(), temp_audio))
             
-            audio_clip = AudioFileClip(temp_audio)
+            a_clip = AudioFileClip(temp_audio)
             silence = AudioClip(lambda t: [0, 0], duration=1.5, fps=44100)
-            final_audio = concatenate_audioclips([audio_clip, silence])
+            final_a = concatenate_audioclips([a_clip, silence])
 
-            # Truyền data['position'] vào đây
             frame_bgr = self.create_frame(data['es_text'], data['en_text'], data['position'])
             frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
             
-            video_segment = ImageClip(frame_rgb).set_duration(final_audio.duration)
-            video_segment = video_segment.set_audio(final_audio)
-            all_segments.append(video_segment)
+            v_seg = ImageClip(frame_rgb).set_duration(final_a.duration).set_audio(final_a)
+            all_segments.append(v_seg)
 
         if all_segments:
-            final_video = concatenate_videoclips(all_segments, method="compose")
-            final_video.write_videofile(final_output, codec="libx264", audio_codec="aac", fps=10, preset="ultrafast")
-            
+            final_path = os.path.join(self.output_dir.get(), "lesson_with_bg.mp4")
+            concatenate_videoclips(all_segments, method="compose").write_videofile(final_path, codec="libx264", fps=10)
             for i in range(len(lines)):
-                f_path = f"temp_{i}.mp3"
-                if os.path.exists(f_path):
-                    try: os.remove(f_path)
-                    except: pass
-            
-            messagebox.showinfo("Success", f"Video created:\n{final_output}")
+                if os.path.exists(f"temp_{i}.mp3"): os.remove(f"temp_{i}.mp3")
+            messagebox.showinfo("Xong!", f"Video lưu tại: {final_path}")
 
     def start_process(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
-        if file_path:
-            self.status_label.config(text="Processing...", fg="red")
+        file = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
+        if file:
+            self.status_label.config(text="Đang tạo video...", fg="red")
             self.root.update()
-            try:
-                self.process_video(file_path)
-            except Exception as e:
-                messagebox.showerror("Error", f"Lỗi: {e}")
+            try: self.process_video(file)
+            except Exception as e: messagebox.showerror("Lỗi", str(e))
             self.status_label.config(text="Ready", fg="blue")
 
 if __name__ == "__main__":

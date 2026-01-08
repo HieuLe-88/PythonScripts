@@ -1,5 +1,4 @@
-
-
-M1|Entro.|Enter.
-M2|Entro a la oficina a las nueve.|I enter the office at nine.
-
+M|Además, quiero probar la comida local.|Also, I want to try the local food.
+F|Yo también, la gastronomía es fundamental.|Me too, gastronomy is essential.
+M|Entonces hagamos un itinerario detallado.|Then let's make a detailed itinerary.
+F|De acuerdo, estoy muy emocionada.|Alright, I'm very excited.
