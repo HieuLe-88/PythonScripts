@@ -11,9 +11,10 @@ from moviepy.editor import AudioFileClip, concatenate_videoclips, concatenate_au
 class VideoGenerator:
     def __init__(self, root):
         self.root = root
-        self.root.title("Spanish Lesson - Pro 16:9 Fixed")
-        self.root.geometry("650x850")
+        self.root.title("Spanish Lesson - Pro Speed Control")
+        self.root.geometry("650x900")
 
+        # 1. Khai báo biến giọng đọc
         self.voice_vars = {
             "M":  tk.StringVar(value="es-ES-AlvaroNeural"),
             "M1": tk.StringVar(value="es-MX-JorgeNeural"),
@@ -25,11 +26,14 @@ class VideoGenerator:
         self.bg_path = tk.StringVar(value="")
         self.logo_path = tk.StringVar(value="")
         self.output_dir = tk.StringVar(value=os.getcwd())
+        
+        # Biến tùy chỉnh tốc độ đọc (Mặc định 100%)
         self.selected_speed = tk.StringVar(value="100%")
 
         voices = ["es-ES-AlvaroNeural", "es-ES-ElviraNeural", "es-MX-JorgeNeural", 
                   "es-MX-DaliaNeural", "es-US-AlonsoNeural", "es-US-PalomaNeural"]
 
+        # 2. Giao diện chọn giọng
         tk.Label(root, text=" CÀI ĐẶT GIỌNG ĐỌC", font=("Arial", 12, "bold")).pack(pady=10)
         v_frame = tk.Frame(root)
         v_frame.pack()
@@ -41,7 +45,15 @@ class VideoGenerator:
 
         tk.Frame(root, height=2, bd=1, relief=tk.SUNKEN).pack(fill=tk.X, padx=20, pady=15)
         
-        bg_frame = tk.Frame(root); bg_frame.pack(pady=5)
+        # --- CÀI ĐẶT TỐC ĐỘ ĐỌC (MỚI) ---
+        tk.Label(root, text=" TỐC ĐỘ ĐỌC (SPEED)", font=("Arial", 10, "bold")).pack()
+        speed_list = [f"{i}%" for i in range(50, 160, 10)] # Tạo danh sách từ 50% đến 150%
+        self.speed_combo = ttk.Combobox(root, textvariable=self.selected_speed, values=speed_list, width=10, state="readonly")
+        self.speed_combo.pack(pady=5)
+        tk.Label(root, text="(100% là bình thường, dưới 100% là chậm)", font=("Arial", 8, "italic"), fg="gray").pack()
+
+        # 3. Giao diện chọn File Nền & Logo
+        bg_frame = tk.Frame(root); bg_frame.pack(pady=10)
         tk.Label(bg_frame, text="Background Image:").pack(side=tk.LEFT)
         tk.Entry(bg_frame, textvariable=self.bg_path, width=30).pack(side=tk.LEFT, padx=5)
         tk.Button(bg_frame, text="Browse", command=self.browse_bg).pack(side=tk.LEFT)
@@ -51,9 +63,10 @@ class VideoGenerator:
         tk.Entry(logo_frame, textvariable=self.logo_path, width=30).pack(side=tk.LEFT, padx=5)
         tk.Button(logo_frame, text="Browse", command=self.browse_logo).pack(side=tk.LEFT)
 
-        tk.Button(root, text="Select Output Folder", command=self.browse_folder).pack(pady=10)
+        tk.Button(root, text="Chọn Thư Mục Lưu Video", command=self.browse_folder).pack(pady=10)
 
-        self.btn = tk.Button(root, text="START GENERATION", bg="#2196F3", fg="white", 
+        # 4. Nút bắt đầu
+        self.btn = tk.Button(root, text="BẮT ĐẦU TẠO VIDEO", bg="#4CAF50", fg="white", 
                              font=("Arial", 12, "bold"), command=self.start_process, padx=30, pady=10)
         self.btn.pack(pady=20)
         self.status_label = tk.Label(root, text="Ready", fg="blue"); self.status_label.pack()
@@ -84,10 +97,8 @@ class VideoGenerator:
         return None
 
     def create_frame(self, es_text, en_text, position, width=1280, height=720):
-        # 1. Tạo ảnh nền đúng tỉ lệ 16:9
         if self.bg_path.get() and os.path.exists(self.bg_path.get()):
             img = Image.open(self.bg_path.get()).convert('RGB')
-            # Cắt và resize để đảm bảo đúng 16:9 không bị méo
             img = img.resize((width, height), Image.Resampling.LANCZOS)
         else:
             img = Image.new('RGB', (width, height), color=(255, 245, 240))
@@ -95,7 +106,7 @@ class VideoGenerator:
         draw = ImageDraw.Draw(img)
         cx = (width // 4) if position == "LEFT" else (3 * width // 4)
         cy = height // 2
-        box_w, box_h = 350, 150 # Tăng nhẹ kích thước box để cân đối 16:9
+        box_w, box_h = 350, 150
         
         main_box = [cx - box_w//2, cy - box_h//2, cx + box_w//2, cy + box_h//2]
         draw.rounded_rectangle(main_box, radius=15, fill=(255, 240, 235), outline=(0, 128, 0), width=3)
@@ -125,11 +136,12 @@ class VideoGenerator:
             logo.thumbnail((80, 80))
             img.paste(logo, (width - 120, 40), logo)
 
-        # Quan trọng: Trả về mảng NumPy trực tiếp (Hệ màu RGB của PIL khớp với MoviePy)
         return np.array(img)
 
     async def generate_audio(self, text, voice, speed_str, filename):
-        rate = f"{int(speed_str.replace('%', '')) - 100:+d}%"
+        # Chuyển đổi định dạng 100% thành định dạng của edge-tts (ví dụ: +0%, -20%)
+        speed_value = int(speed_str.replace('%', ''))
+        rate = f"{speed_value - 100:+d}%"
         await edge_tts.Communicate(text, voice, rate=rate).save(filename)
 
     def process_video(self, file_path):
@@ -137,39 +149,39 @@ class VideoGenerator:
             lines = [l for l in f.readlines() if l.strip()]
 
         all_segments = []
+        speed = self.selected_speed.get() # Lấy tốc độ từ GUI
+
         for i, line in enumerate(lines):
             data = self.parse_line(line)
             if not data: continue
 
             temp_audio = f"temp_{i}.mp3"
             clean_txt = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
-            asyncio.run(self.generate_audio(clean_txt, data['voice'], self.selected_speed.get(), temp_audio))
+            
+            # Sử dụng tốc độ đã chọn
+            asyncio.run(self.generate_audio(clean_txt, data['voice'], speed, temp_audio))
             
             a_clip = AudioFileClip(temp_audio)
             silence = AudioClip(lambda t: [0, 0], duration=1.5, fps=44100)
             final_a = concatenate_audioclips([a_clip, silence])
 
-            # create_frame giờ trả về RGB chuẩn
             frame_rgb = self.create_frame(data['es_text'], data['en_text'], data['position'])
-            
-            # MoviePy ImageClip nhận diện RGB mặc định từ NumPy array
             v_seg = ImageClip(frame_rgb).set_duration(final_a.duration).set_audio(final_a)
             all_segments.append(v_seg)
 
         if all_segments:
-            final_path = os.path.join(self.output_dir.get(), "final_lesson_169.mp4")
-            # method="chain" giúp giữ tỉ lệ khung hình tốt hơn
+            final_path = os.path.join(self.output_dir.get(), "spanish_lesson_final.mp4")
             final_video = concatenate_videoclips(all_segments, method="compose")
             final_video.write_videofile(final_path, codec="libx264", audio_codec="aac", fps=24)
             
             for i in range(len(lines)):
                 if os.path.exists(f"temp_{i}.mp3"): os.remove(f"temp_{i}.mp3")
-            messagebox.showinfo("Xong!", f"Video 16:9 đã lưu tại: {final_path}")
+            messagebox.showinfo("Thành công!", f"Video đã tạo xong tại: {final_path}")
 
     def start_process(self):
         file = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
         if file:
-            self.status_label.config(text="Đang xử lý 16:9...", fg="red")
+            self.status_label.config(text="Đang xử lý video...", fg="red")
             self.root.update()
             try: self.process_video(file)
             except Exception as e: messagebox.showerror("Lỗi", str(e))
