@@ -49,25 +49,14 @@ class VideoGenerator:
         if file: self.logo_path.set(file)
 
     def parse_line(self, line):
-        # Tách dòng dựa trên dấu gạch đứng "|"
-        # Ví dụ: M|Entro.|Enter. -> ['M', 'Entro.', 'Enter.']
         parts = line.split("|")
         if len(parts) >= 3:
-            gender = parts[0].strip().upper()
-            es_part = parts[1].strip()
-            en_part = parts[2].strip()
-
-            # Làm sạch text (xóa số trong ngoặc nếu có)
-            clean_es = re.sub(r'\s*\(\d+\)', '', es_part)
-            clean_en = re.sub(r'\s*\(\d+\)', '', en_part)
-            
-            # Chọn giọng dựa trên giới tính
-            voice = self.male_voice if gender == 'M' else self.female_voice
-            
+            gender_val = parts[0].strip().upper() # M hoặc F
             return {
-                "voice": voice,
-                "es_text": clean_es,
-                "en_text": clean_en
+                "gender": gender_val,
+                "voice": self.male_voice if gender_val == 'M' else self.female_voice,
+                "es_text": re.sub(r'\s*\(\d+\)', '', parts[1].strip()),
+                "en_text": re.sub(r'\s*\(\d+\)', '', parts[2].strip())
             }
         return None
     
@@ -88,50 +77,36 @@ class VideoGenerator:
         lines.append(' '.join(current_line))
         return '\n'.join(lines)
 
-    def create_frame(self, es_text, en_text, width=1280, height=720):
-        # 1. Nền chính: Màu trắng đục nhẹ (Seashell White)
+    def create_frame(self, es_text, en_text, gender, width=1280, height=720):
         img = Image.new('RGB', (width, height), color=(255, 245, 240))
         draw = ImageDraw.Draw(img)
         
-        # --- ĐÃ XÓA PHẦN VẼ CONTAINER VIỀN NGOÀI ---
-
-        # 2. Thiết lập Box nhỏ (1/4 kích thước ban đầu)
-        box_w = 320  # Tăng nhẹ một chút so với 270 để chứa chữ 24pt tốt hơn
-        box_h = 120
-        cx, cy = width // 2, height // 2 # Tâm màn hình
+        # Tính toán cx (tâm ngang) dựa trên giới tính
+        center_screen = width // 2
+        if gender == 'M':
+            cx = center_screen - (width // 4) # Dịch trái 1/4
+        else:
+            cx = center_screen + (width // 4) # Dịch phải 1/4
         
+        cy = height // 2
+        box_w, box_h = 320, 120
         main_box = [cx - box_w//2, cy - box_h//2, cx + box_w//2, cy + box_h//2]
         
-        # Vẽ box nhỏ ở giữa
+        # Vẽ box nhỏ
         draw.rounded_rectangle(main_box, radius=15, fill=(255, 240, 235), outline=(0, 128, 0), width=3)
 
-        # 3. Fonts: Tiếng Anh (16) bằng 2/3 Tiếng Tây Ban Nha (24)
-        es_size = 24
-        en_size = 16 
+        # Fonts (Tỷ lệ 2/3)
         try:
-            es_font = ImageFont.truetype("arial.ttf", es_size) 
-            en_font = ImageFont.truetype("arial.ttf", en_size)
+            es_font = ImageFont.truetype("arial.ttf", 24) 
+            en_font = ImageFont.truetype("arial.ttf", 16)
         except:
             es_font = en_font = ImageFont.load_default()
 
-        # 4. Wrap text để chữ không tràn khỏi box nhỏ
-        max_text_width = box_w - 40
-        wrapped_es = self.wrap_text(es_text, es_font, max_text_width)
-        wrapped_en = self.wrap_text(en_text, en_font, max_text_width)
-
-        # 5. Tính toán vị trí vẽ chữ (Căn giữa trong box)
-        # Spanish nằm trên, English nằm dưới
-        line_spacing = 10
+        # Vẽ chữ
+        wrapped_es = self.wrap_text(es_text, es_font, box_w - 40)
+        wrapped_en = self.wrap_text(en_text, en_font, box_w - 40)
         draw.text((cx, cy - 15), wrapped_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
         draw.text((cx, cy + 20), wrapped_en, fill="black", font=en_font, anchor="mm", align="center")
-
-        # 6. Logo (Thu nhỏ lại góc trên bên phải)
-        if self.logo_path.get() and os.path.exists(self.logo_path.get()):
-            try:
-                logo = Image.open(self.logo_path.get()).convert("RGBA")
-                logo.thumbnail((60, 60)) 
-                img.paste(logo, (width - 100, 40), logo)
-            except: pass
 
         return np.array(img)
 
@@ -147,22 +122,21 @@ class VideoGenerator:
             data = self.parse_line(line)
             if not data: continue
 
-            # 1. Âm thanh: Sử dụng giọng đã parse (M hoặc F)
+            # Tạo audio (như cũ)
             clean_audio_text = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
             temp_audio = f"temp_{i}.mp3"
-            
             asyncio.run(self.generate_audio(clean_audio_text, data['voice'], self.selected_speed.get(), temp_audio))
             
             audio_clip = AudioFileClip(temp_audio)
             silence = AudioClip(lambda t: [0, 0], duration=1.5, fps=44100)
             final_audio = concatenate_audioclips([audio_clip, silence])
 
-            # 2. Hình ảnh
-            frame_rgb = self.create_frame(data['es_text'], data['en_text'])
+            # SỬA LỖI TẠI ĐÂY: Thêm data['gender'] vào tham số thứ 3
+            frame_bgr = self.create_frame(data['es_text'], data['en_text'], data['gender'])
+            frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
             
             video_segment = ImageClip(frame_rgb).set_duration(final_audio.duration)
             video_segment = video_segment.set_audio(final_audio)
-            
             all_segments.append(video_segment)
 
         if all_segments:
