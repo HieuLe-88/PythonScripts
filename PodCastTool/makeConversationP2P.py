@@ -121,7 +121,7 @@ class VideoGenerator:
         draw.rounded_rectangle([cx-box_w//2, cy-box_h//2, cx+box_w//2, cy+box_h//2], radius=15, fill=(255, 240, 235), outline=(0, 128, 0), width=3)
 
         try:
-            es_f, en_f = ImageFont.truetype("arial.ttf", 26), ImageFont.truetype("arial.ttf", 18)
+            es_f, en_f = ImageFont.truetype("arial.ttf", 22), ImageFont.truetype("arial.ttf", 18)
         except:
             es_f = en_f = ImageFont.load_default()
 
