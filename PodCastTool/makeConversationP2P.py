@@ -89,31 +89,48 @@ class VideoGenerator:
         return '\n'.join(lines)
 
     def create_frame(self, es_text, en_text, width=1280, height=720):
+        # 1. Main Background: Seashell White
         img = Image.new('RGB', (width, height), color=(255, 245, 240))
         draw = ImageDraw.Draw(img)
         margin_x = 80
         
-        main_box = [margin_x + 20, 180, width - margin_x - 20, 180 + 350]
+        # 2. Container lớn (giữ nguyên để làm khung nền)
         draw.rounded_rectangle([margin_x-20, 60, width-margin_x+20, 660], radius=35, fill="white", outline=(200, 200, 200), width=2)
-        draw.rounded_rectangle(main_box, radius=25, fill=(255, 240, 235), outline=(0, 128, 0), width=4)
 
+        # 3. THAY ĐỔI: Box nhỏ thu lại còn 1/4 (Chiều rộng và cao đều giảm)
+        # Kích thước box cũ khoảng 1080x350 -> Box mới khoảng 270x88
+        box_w = 270
+        box_h = 90
+        cx, cy = width // 2, height // 2 # Tâm màn hình
+        
+        main_box = [cx - box_w//2, cy - box_h//2, cx + box_w//2, cy + box_h//2]
+        draw.rounded_rectangle(main_box, radius=10, fill=(255, 240, 235), outline=(0, 128, 0), width=2)
+
+        # 4. THAY ĐỔI: Fonts giảm còn 1/4
+        # es_font: 60 -> 15 | en_font: 35 -> 9
         try:
-            es_font = ImageFont.truetype("arial.ttf", 60) # Giảm nhẹ size để tránh tràn dòng câu dài
-            en_font = ImageFont.truetype("arial.ttf", 35)
+            es_font = ImageFont.truetype("arial.ttf", 15) 
+            en_font = ImageFont.truetype("arial.ttf", 9)
         except:
             es_font = en_font = ImageFont.load_default()
 
-        wrapped_es = self.wrap_text(es_text, es_font, (width - margin_x * 2) - 100)
-        wrapped_en = self.wrap_text(en_text, en_font, (width - margin_x * 2) - 100)
+        # Giới hạn chiều rộng text theo box mới
+        max_text_width = box_w - 20
+        wrapped_es = self.wrap_text(es_text, es_font, max_text_width)
+        wrapped_en = self.wrap_text(en_text, en_font, max_text_width)
 
-        cx, cy = (main_box[0] + main_box[2]) // 2, (main_box[1] + main_box[3]) // 2
-        draw.text((cx, cy - 40), wrapped_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
-        draw.text((cx, cy + 60), wrapped_en, fill="black", font=en_font, anchor="mm", align="center")
+        # 5. Vẽ chữ vào tâm của box nhỏ
+        # Khoảng cách dòng cũng thu nhỏ lại
+        draw.text((cx, cy - 10), wrapped_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
+        draw.text((cx, cy + 12), wrapped_en, fill="black", font=en_font, anchor="mm", align="center")
 
+        # 6. Logo (giữ nguyên hoặc thu nhỏ thêm tùy bạn)
         if self.logo_path.get() and os.path.exists(self.logo_path.get()):
-            logo = Image.open(self.logo_path.get()).convert("RGBA")
-            logo.thumbnail((100, 100))
-            img.paste(logo, (width - 150, 20), logo)
+            try:
+                logo = Image.open(self.logo_path.get()).convert("RGBA")
+                logo.thumbnail((50, 50)) # Thu nhỏ logo cho hợp với style mới
+                img.paste(logo, (width - 150, 20), logo)
+            except: pass
 
         return np.array(img)
 
