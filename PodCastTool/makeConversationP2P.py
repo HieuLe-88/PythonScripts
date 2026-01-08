@@ -3,7 +3,7 @@ import edge_tts
 import os
 import re
 import numpy as np
-from datetime import datetime  # Thêm thư viện để lấy thời gian thực
+from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -12,68 +12,90 @@ from moviepy.editor import AudioFileClip, concatenate_videoclips, concatenate_au
 class VideoGenerator:
     def __init__(self, root):
         self.root = root
-        self.root.title("Spanish Lesson - Custom Box Position")
-        self.root.geometry("650x950")
+        self.root.title("Multilingual Lesson Video Generator")
+        self.root.geometry("700x950")
 
-        # 1. Biến giọng đọc
-        self.voice_vars = {
-            "M":  tk.StringVar(value="es-ES-AlvaroNeural"),
-            "M1": tk.StringVar(value="es-MX-JorgeNeural"),
-            "M2": tk.StringVar(value="es-US-AlonsoNeural"),
-            "F":  tk.StringVar(value="es-ES-ElviraNeural"),
-            "F1": tk.StringVar(value="es-MX-DaliaNeural"),
-            "F2": tk.StringVar(value="es-US-PalomaNeural")
+        # 1. Danh sách giọng đọc theo ngôn ngữ
+        self.voices_data = {
+            "Spanish": ["es-ES-AlvaroNeural", "es-ES-ElviraNeural", "es-MX-JorgeNeural", 
+                        "es-MX-DaliaNeural", "es-US-AlonsoNeural", "es-US-PalomaNeural"],
+            "Chinese": ["zh-CN-YunxiNeural", "zh-CN-XiaoxiaoNeural", "zh-CN-YunjianNeural", 
+                        "zh-CN-XiaoyiNeural", "zh-HK-HiuGaaiNeural", "zh-TW-HsiaoChenNeural"]
         }
-        
-        # 2. Biến vị trí Box
+
+        # 2. Các biến điều khiển
+        self.lang_var = tk.StringVar(value="Spanish")
+        self.voice_vars = {tag: tk.StringVar() for tag in ["M", "M1", "M2", "F", "F1", "F2"]}
+        self.set_default_voices()
+
         self.pos_left_var = tk.StringVar(value="6.5,4")
         self.pos_right_var = tk.StringVar(value="6.5,12")
-
         self.bg_path = tk.StringVar(value="")
-        self.logo_path = tk.StringVar(value="")
         self.output_dir = tk.StringVar(value=os.getcwd())
         self.selected_speed = tk.StringVar(value="100%")
 
-        voices = ["es-ES-AlvaroNeural", "es-ES-ElviraNeural", "es-MX-JorgeNeural", 
-                  "es-MX-DaliaNeural", "es-US-AlonsoNeural", "es-US-PalomaNeural"]
+        self.setup_gui()
 
-        # GUI - Cài đặt giọng
-        tk.Label(root, text=" CÀI ĐẶT GIỌNG ĐỌC", font=("Arial", 11, "bold")).pack(pady=5)
-        v_frame = tk.Frame(root); v_frame.pack()
-        row = 0
-        for tag, var in self.voice_vars.items():
-            tk.Label(v_frame, text=f"Giọng {tag}:").grid(row=row, column=0, padx=5, pady=2, sticky="e")
-            ttk.Combobox(v_frame, textvariable=var, values=voices, width=25).grid(row=row, column=1, padx=5, pady=2)
-            row += 1
+    def set_default_voices(self):
+        lang = self.lang_var.get()
+        v_list = self.voices_data[lang]
+        for i, tag in enumerate(["M", "M1", "M2", "F", "F1", "F2"]):
+            self.voice_vars[tag].set(v_list[i % len(v_list)])
 
-        tk.Frame(root, height=2, bd=1, relief=tk.SUNKEN).pack(fill=tk.X, padx=20, pady=10)
+    def update_voice_options(self, event=None):
+        lang = self.lang_var.get()
+        new_values = self.voices_data[lang]
+        for cb in self.voice_combos:
+            cb['values'] = new_values
+        self.set_default_voices()
 
-        # GUI - Tùy chỉnh vị trí Box
-        tk.Label(root, text=" TÙY CHỈNH VỊ TRÍ BOX (Tỉ lệ 9:16)", font=("Arial", 11, "bold")).pack()
-        pos_frame = tk.Frame(root); pos_frame.pack(pady=5)
+    def setup_gui(self):
+        # Chọn ngôn ngữ
+        lang_frame = tk.LabelFrame(self.root, text=" 1. CHỌN NGÔN NGỮ ", font=("Arial", 10, "bold"), pady=10)
+        lang_frame.pack(fill="x", padx=20, pady=5)
+        ttk.Combobox(lang_frame, textvariable=self.lang_var, values=["Spanish", "Chinese"], 
+                     state="readonly", width=20).pack()
+        self.lang_var.trace("w", lambda *args: self.update_voice_options())
+
+        # Cài đặt giọng đọc
+        v_frame = tk.LabelFrame(self.root, text=" 2. CÀI ĐẶT GIỌNG ĐỌC ", font=("Arial", 10, "bold"), pady=10)
+        v_frame.pack(fill="x", padx=20, pady=5)
         
-        tk.Label(pos_frame, text="Box Trái (y,x):").grid(row=0, column=0, padx=5)
-        tk.Entry(pos_frame, textvariable=self.pos_left_var, width=10).grid(row=0, column=1, padx=5)
+        self.voice_combos = []
+        container = tk.Frame(v_frame)
+        container.pack()
         
-        tk.Label(pos_frame, text="Box Phải (y,x):").grid(row=0, column=2, padx=5)
-        tk.Entry(pos_frame, textvariable=self.pos_right_var, width=10).grid(row=0, column=3, padx=5)
+        tags = ["M", "M1", "M2", "F", "F1", "F2"]
+        for i, tag in enumerate(tags):
+            r, c = divmod(i, 2)
+            tk.Label(container, text=f"Giọng {tag}:").grid(row=r, column=c*2, padx=5, pady=2, sticky="e")
+            cb = ttk.Combobox(container, textvariable=self.voice_vars[tag], values=self.voices_data[self.lang_var.get()], width=20)
+            cb.grid(row=r, column=c*2+1, padx=5, pady=2)
+            self.voice_combos.append(cb)
+
+        # Vị trí Box
+        pos_frame = tk.LabelFrame(self.root, text=" 3. VỊ TRÍ BOX (y,x) ", font=("Arial", 10, "bold"), pady=10)
+        pos_frame.pack(fill="x", padx=20, pady=5)
+        tk.Label(pos_frame, text="Box Trái:").grid(row=0, column=0, padx=10)
+        tk.Entry(pos_frame, textvariable=self.pos_left_var, width=10).grid(row=0, column=1)
+        tk.Label(pos_frame, text="Box Phải:").grid(row=0, column=2, padx=10)
+        tk.Entry(pos_frame, textvariable=self.pos_right_var, width=10).grid(row=0, column=3)
+
+        # Nền & Tốc độ
+        other_frame = tk.Frame(self.root)
+        other_frame.pack(pady=10)
+        tk.Label(other_frame, text="Tốc độ:").grid(row=0, column=0)
+        ttk.Combobox(other_frame, textvariable=self.selected_speed, values=[f"{i}%" for i in range(50, 160, 10)], width=8).grid(row=0, column=1, padx=10)
         
-        tk.Label(root, text="Ví dụ: 6.5,4 nghĩa là y=6.5/9 và x=4/16", font=("Arial", 8, "italic"), fg="gray").pack()
+        tk.Button(other_frame, text="Chọn Nền", command=self.browse_bg).grid(row=0, column=2, padx=5)
+        tk.Button(other_frame, text="Thư Mục Lưu", command=self.browse_folder).grid(row=0, column=3, padx=5)
 
-        # GUI - Các phần khác
-        tk.Label(root, text="Tốc độ đọc:").pack(pady=(10,0))
-        ttk.Combobox(root, textvariable=self.selected_speed, values=[f"{i}%" for i in range(50, 160, 10)], width=10).pack()
-
-        bg_f = tk.Frame(root); bg_f.pack(pady=10)
-        tk.Label(bg_f, text="Nền:").pack(side=tk.LEFT); tk.Entry(bg_f, textvariable=self.bg_path, width=30).pack(side=tk.LEFT, padx=5)
-        tk.Button(bg_f, text="Mở", command=self.browse_bg).pack(side=tk.LEFT)
-
-        tk.Button(root, text="Chọn Thư Mục Lưu", command=self.browse_folder).pack()
-
-        self.btn = tk.Button(root, text="BẮT ĐẦU TẠO VIDEO", bg="#4CAF50", fg="white", 
-                             font=("Arial", 12, "bold"), command=self.start_process, padx=30, pady=10)
-        self.btn.pack(pady=15)
-        self.status_label = tk.Label(root, text="Ready", fg="blue"); self.status_label.pack()
+        # Bắt đầu
+        self.btn = tk.Button(self.root, text="BẮT ĐẦU TẠO VIDEO", bg="#4CAF50", fg="white", 
+                             font=("Arial", 12, "bold"), command=self.start_process, padx=40, pady=15)
+        self.btn.pack(pady=20)
+        self.status_label = tk.Label(self.root, text="Ready", fg="blue")
+        self.status_label.pack()
 
     def browse_bg(self):
         f = filedialog.askopenfilename(); self.bg_path.set(f if f else "")
@@ -86,44 +108,71 @@ class VideoGenerator:
             tag = parts[0].strip().upper()
             pos_type = "LEFT" if tag in ["M", "M1", "F1"] else "RIGHT"
             voice = self.voice_vars.get(tag, self.voice_vars["M"]).get()
-            return {"position_type": pos_type, "voice": voice, "es_text": parts[1].strip(), "en_text": parts[2].strip()}
+            return {
+                "position_type": pos_type, 
+                "voice": voice, 
+                "main_text": parts[0].strip() if self.lang_var.get() == "Chinese" else parts[1].strip(), # Dự phòng logic tag
+                "text_1": parts[0].strip(), # Chinese
+                "text_2": parts[1].strip(), # Pinyin
+                "text_3": parts[2].strip()  # English
+            }
         return None
 
-    def create_frame(self, es_text, en_text, position_type, width=1280, height=720):
+    def create_frame(self, data, width=1280, height=720):
+        # 1. Background
         if self.bg_path.get() and os.path.exists(self.bg_path.get()):
             img = Image.open(self.bg_path.get()).convert('RGB').resize((width, height), Image.Resampling.LANCZOS)
         else:
             img = Image.new('RGB', (width, height), color=(255, 245, 240))
         
         draw = ImageDraw.Draw(img)
+        is_chinese = (self.lang_var.get() == "Chinese")
 
+        # 2. Tọa độ
+        pos_str = self.pos_left_var.get() if data['position_type'] == "LEFT" else self.pos_right_var.get()
         try:
-            if position_type == "LEFT":
-                raw_pos = self.pos_left_var.get().split(',')
-            else:
-                raw_pos = self.pos_right_var.get().split(',')
-            y_ratio, x_ratio = float(raw_pos[0]), float(raw_pos[1])
+            y_r, x_r = map(float, pos_str.split(','))
         except:
-            y_ratio, x_ratio = (6.5, 4) if position_type == "LEFT" else (6.5, 12)
+            y_r, x_r = (6.5, 4) if data['position_type'] == "LEFT" else (6.5, 12)
 
-        cx, cy = int(width * (x_ratio / 16)), int(height * (y_ratio / 9))
-        box_w, box_h = 350, 150
+        cx, cy = int(width * (x_r / 16)), int(height * (y_r / 9))
+        box_w, box_h = 400, 180
         draw.rounded_rectangle([cx-box_w//2, cy-box_h//2, cx+box_w//2, cy+box_h//2], radius=15, fill=(255, 240, 235), outline=(0, 128, 0), width=3)
 
+        # 3. Font chữ
         try:
-            es_f, en_f = ImageFont.truetype("arial.ttf", 23), ImageFont.truetype("arial.ttf", 18)
+            f_main = ImageFont.truetype("msyh.ttc" if is_chinese else "arial.ttf", 22) # Chữ chính
+            f_sub = ImageFont.truetype("arial.ttf", 11)   # Pinyin (50%)
+            f_eng = ImageFont.truetype("arial.ttf", 15)   # English (70%)
         except:
-            es_f = en_f = ImageFont.load_default()
+            f_main = f_sub = f_eng = ImageFont.load_default()
 
         def wrap(t, f, w):
-            words = t.split(' '); l, cur = [], []
+            words = list(t) if is_chinese and f == f_main else t.split(' ')
+            l, cur = [], []
             for wd in words:
-                if f.getbbox(' '.join(cur + [wd]))[2] <= w: cur.append(wd)
-                else: l.append(' '.join(cur)); cur = [wd]
-            l.append(' '.join(cur)); return '\n'.join(l)
+                sep = "" if is_chinese and f == f_main else " "
+                test = sep.join(cur + [wd]).strip()
+                if f.getbbox(test)[2] <= w: cur.append(wd)
+                else: l.append(sep.join(cur)); cur = [wd]
+            l.append(sep.join(cur)); return '\n'.join(l)
 
-        draw.text((cx, cy-20), wrap(es_text, es_f, box_w-40), fill=(0, 100, 0), font=es_f, anchor="mm", align="center")
-        draw.text((cx, cy+25), wrap(en_text, en_f, box_w-40), fill="black", font=en_f, anchor="mm", align="center")
+        # 4. Vẽ chữ theo ngôn ngữ
+        if is_chinese:
+            # text_1: Chinese, text_2: Pinyin, text_3: English
+            txt_pinyin = wrap(data['text_2'], f_sub, box_w - 40)
+            txt_chinese = wrap(data['text_1'], f_main, box_w - 40)
+            txt_english = wrap(data['text_3'], f_eng, box_w - 40)
+
+            draw.text((cx, cy - 45), txt_pinyin, fill="#555555", font=f_sub, anchor="mm", align="center")
+            draw.text((cx, cy - 5), txt_chinese, fill=(0, 100, 0), font=f_main, anchor="mm", align="center")
+            draw.text((cx, cy + 45), txt_english, fill="black", font=f_eng, anchor="mm", align="center")
+        else:
+            # Chế độ Spanish cũ (text_1: tag, text_2: Spanish, text_3: English)
+            txt_es = wrap(data['text_2'], f_main, box_w - 40)
+            txt_en = wrap(data['text_3'], f_eng, box_w - 40)
+            draw.text((cx, cy - 15), txt_es, fill=(0, 100, 0), font=f_main, anchor="mm", align="center")
+            draw.text((cx, cy + 30), txt_en, fill="black", font=f_eng, anchor="mm", align="center")
 
         return np.array(img)
 
@@ -139,32 +188,34 @@ class VideoGenerator:
         for i, line in enumerate(lines):
             data = self.parse_line(line)
             if not data: continue
+            
             temp_audio = f"temp_{i}.mp3"
-            clean_txt = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
+            # Đọc text chính (Chinese hoặc Spanish)
+            read_text = data['text_1'] if self.lang_var.get() == "Chinese" else data['text_2']
+            clean_txt = re.sub(r'[?/.()¿¡!]', '', read_text)
+            
             asyncio.run(self.generate_audio(clean_txt, data['voice'], self.selected_speed.get(), temp_audio))
+            
             a_clip = AudioFileClip(temp_audio)
             silence = AudioClip(lambda t: [0, 0], duration=0.9, fps=44100)
             final_a = concatenate_audioclips([a_clip, silence])
-            frame_rgb = self.create_frame(data['es_text'], data['en_text'], data['position_type'])
+            
+            frame_rgb = self.create_frame(data)
             v_seg = ImageClip(frame_rgb).set_duration(final_a.duration).set_audio(final_a)
             all_segments.append(v_seg)
 
         if all_segments:
-            # --- Cập nhật logic đặt tên file theo thời gian thực ---
             time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_name = f"output_{time_str}.mp4"
-            final_path = os.path.join(self.output_dir.get(), file_name)
-            
-            concatenate_videoclips(all_segments, method="compose").write_videofile(final_path, codec="libx264", audio_codec="aac", fps=5)
-            
+            final_path = os.path.join(self.output_dir.get(), f"output_{self.lang_var.get()}_{time_str}.mp4")
+            concatenate_videoclips(all_segments, method="compose").write_videofile(final_path, codec="libx264", audio_codec="aac", fps=10)
             for i in range(len(lines)):
                 if os.path.exists(f"temp_{i}.mp3"): os.remove(f"temp_{i}.mp3")
-            messagebox.showinfo("Xong!", f"Video đã lưu tại: {final_path}")
+            messagebox.showinfo("Thành công", f"Video lưu tại: {final_path}")
 
     def start_process(self):
         file = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
         if file:
-            self.status_label.config(text="Đang tạo...", fg="red"); self.root.update()
+            self.status_label.config(text="Đang xử lý...", fg="red"); self.root.update()
             try: self.process_video(file)
             except Exception as e: messagebox.showerror("Lỗi", str(e))
             self.status_label.config(text="Ready", fg="blue")
