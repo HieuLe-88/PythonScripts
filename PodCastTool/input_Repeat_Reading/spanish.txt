@@ -1,5 +1,5 @@
 
 
-Entro (3).|Enter (1).
-Entro a la oficina a las nueve (3).|I enter the office at nine (1).
+M|Entro.|Enter.
+F|Entro a la oficina a las nueve.|I enter the office at nine.
 

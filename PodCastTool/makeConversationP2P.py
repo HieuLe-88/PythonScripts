@@ -52,12 +52,23 @@ class VideoGenerator:
         if file: self.logo_path.set(file)
 
     def parse_line(self, line):
-        pattern = r"(.+?)\s*\((\d+)\)\.\|(.+?)\s*\((\d+)\)\."
-        match = re.search(pattern, line)
-        if match:
-            return {"es_text": match.group(1).strip(), "en_text": match.group(3).strip()}
-        return None
+        # Tách dòng dựa trên dấu gạch đứng "|"
+        if "|" in line:
+            parts = line.split("|")
+            es_part = parts[0].strip()
+            en_part = parts[1].strip()
 
+            # Loại bỏ phần số trong ngoặc nếu có (ví dụ: "Entro (3)." -> "Entro.")
+            # Regex này xóa cụm (số) và các dấu chấm thừa
+            clean_es = re.sub(r'\s*\(\d+\)', '', es_part)
+            clean_en = re.sub(r'\s*\(\d+\)', '', en_part)
+            
+            return {
+                "es_text": clean_es,
+                "en_text": clean_en
+            }
+        return None
+    
     async def generate_audio(self, text, voice_str, speed_str, filename):
         rate = f"{int(speed_str.replace('%', '')) - 100:+d}%"
         voice = voice_str.split(" ")[0]
@@ -109,43 +120,55 @@ class VideoGenerator:
         return np.array(img)
 
     def process_video(self, file_path):
+        from moviepy.editor import AudioFileClip, concatenate_videoclips, concatenate_audioclips, AudioClip, ImageClip
+        
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = [line for line in f.readlines() if line.strip()]
 
         all_segments = []
         out_folder = self.output_dir.get()
-        final_output = os.path.join(out_folder, "final_lesson.mp4")
+        final_output = os.path.join(out_folder, "final_lesson_cleaned.mp4")
 
         for i, line in enumerate(lines):
             data = self.parse_line(line)
             if not data: continue
 
-            # 1. Audio: Chỉ đọc 1 lần Spanish
+            # 1. Âm thanh: Chỉ lấy chữ để đọc, loại bỏ hoàn toàn ký tự lạ
             clean_audio_text = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
             temp_audio = f"temp_{i}.mp3"
+            
+            # Thực hiện tạo file audio (Chỉ đọc Spanish 1 lần)
             asyncio.run(self.generate_audio(clean_audio_text, self.selected_voice.get(), self.selected_speed.get(), temp_audio))
             
             audio_clip = AudioFileClip(temp_audio)
-            # Thêm 1 giây im lặng sau khi đọc để học viên kịp nhìn chữ
-            silence = AudioClip(lambda t: [0, 0], duration=1.0, fps=44100)
+            # Nghỉ 1.5 giây sau khi đọc để học viên nhìn màn hình
+            silence = AudioClip(lambda t: [0, 0], duration=1.5, fps=44100)
             final_audio = concatenate_audioclips([audio_clip, silence])
 
-            # 2. Visual: Tạo clip trực tiếp từ Image
+            # 2. Hình ảnh: Hiển thị chữ đã làm sạch (không kèm số)
+            # frame_rgb sẽ hiển thị "Entro" ở trên và "Enter" ở dưới
             frame_rgb = self.create_frame(data['es_text'], data['en_text'])
-            video_segment = ImageClip(frame_rgb).set_duration(final_audio.duration)
+            
+            # Chuyển đổi định dạng cho MoviePy (BGR -> RGB)
+            frame_proper = cv2.cvtColor(frame_rgb, cv2.COLOR_BGR2RGB)
+            
+            video_segment = ImageClip(frame_proper).set_duration(final_audio.duration)
             video_segment = video_segment.set_audio(final_audio)
             
             all_segments.append(video_segment)
 
         if all_segments:
             final_video = concatenate_videoclips(all_segments, method="compose")
-            final_video.write_videofile(final_output, codec="libx264", audio_codec="aac", fps=10)
+            final_video.write_videofile(final_output, codec="libx264", audio_codec="aac", fps=10, preset="ultrafast")
             
-            # Dọn dẹp
+            # Dọn dẹp file mp3 tạm
             for i in range(len(lines)):
-                if os.path.exists(f"temp_{i}.mp3"): os.remove(f"temp_{i}.mp3")
+                f_path = f"temp_{i}.mp3"
+                if os.path.exists(f_path):
+                    try: os.remove(f_path)
+                    except: pass
             
-            messagebox.showinfo("Xong!", f"Video đã lưu tại:\n{final_output}")
+            messagebox.showinfo("Thành công", f"Video đã tạo xong:\n{final_output}")
 
     def start_process(self):
         file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
