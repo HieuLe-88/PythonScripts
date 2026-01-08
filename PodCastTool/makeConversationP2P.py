@@ -3,6 +3,7 @@ import edge_tts
 import os
 import re
 import numpy as np
+from datetime import datetime  # Thêm thư viện để lấy thời gian thực
 from PIL import Image, ImageDraw, ImageFont
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -24,8 +25,7 @@ class VideoGenerator:
             "F2": tk.StringVar(value="es-US-PalomaNeural")
         }
         
-        # 2. Biến vị trí Box (Mặc định theo yêu cầu)
-        # Format: "y,x"
+        # 2. Biến vị trí Box
         self.pos_left_var = tk.StringVar(value="6.5,4")
         self.pos_right_var = tk.StringVar(value="6.5,12")
 
@@ -48,7 +48,7 @@ class VideoGenerator:
 
         tk.Frame(root, height=2, bd=1, relief=tk.SUNKEN).pack(fill=tk.X, padx=20, pady=10)
 
-        # --- GUI - TÙY CHỈNH VỊ TRÍ BOX (MỚI) ---
+        # GUI - Tùy chỉnh vị trí Box
         tk.Label(root, text=" TÙY CHỈNH VỊ TRÍ BOX (Tỉ lệ 9:16)", font=("Arial", 11, "bold")).pack()
         pos_frame = tk.Frame(root); pos_frame.pack(pady=5)
         
@@ -58,7 +58,7 @@ class VideoGenerator:
         tk.Label(pos_frame, text="Box Phải (y,x):").grid(row=0, column=2, padx=5)
         tk.Entry(pos_frame, textvariable=self.pos_right_var, width=10).grid(row=0, column=3, padx=5)
         
-        tk.Label(root, text="Ví dụ: 2.5,4 nghĩa là y=2.5/9 và x=4/16", font=("Arial", 8, "italic"), fg="gray").pack()
+        tk.Label(root, text="Ví dụ: 6.5,4 nghĩa là y=6.5/9 và x=4/16", font=("Arial", 8, "italic"), fg="gray").pack()
 
         # GUI - Các phần khác
         tk.Label(root, text="Tốc độ đọc:").pack(pady=(10,0))
@@ -77,8 +77,6 @@ class VideoGenerator:
 
     def browse_bg(self):
         f = filedialog.askopenfilename(); self.bg_path.set(f if f else "")
-    def browse_logo(self):
-        f = filedialog.askopenfilename(); self.logo_path.set(f if f else "")
     def browse_folder(self):
         f = filedialog.askdirectory(); self.output_dir.set(f if f else "")
 
@@ -92,7 +90,6 @@ class VideoGenerator:
         return None
 
     def create_frame(self, es_text, en_text, position_type, width=1280, height=720):
-        # 1. Tạo nền
         if self.bg_path.get() and os.path.exists(self.bg_path.get()):
             img = Image.open(self.bg_path.get()).convert('RGB').resize((width, height), Image.Resampling.LANCZOS)
         else:
@@ -100,28 +97,21 @@ class VideoGenerator:
         
         draw = ImageDraw.Draw(img)
 
-        # 2. Xử lý tọa độ từ GUI
         try:
             if position_type == "LEFT":
                 raw_pos = self.pos_left_var.get().split(',')
             else:
                 raw_pos = self.pos_right_var.get().split(',')
-            
-            y_ratio = float(raw_pos[0])
-            x_ratio = float(raw_pos[1])
+            y_ratio, x_ratio = float(raw_pos[0]), float(raw_pos[1])
         except:
-            # Fallback nếu user nhập sai format
-            y_ratio, x_ratio = (2.5, 4) if position_type == "LEFT" else (2.5, 12)
+            y_ratio, x_ratio = (6.5, 4) if position_type == "LEFT" else (6.5, 12)
 
-        cx = int(width * (x_ratio / 16))
-        cy = int(height * (y_ratio / 9))
-
-        # 3. Vẽ Box
+        cx, cy = int(width * (x_ratio / 16)), int(height * (y_ratio / 9))
         box_w, box_h = 350, 150
         draw.rounded_rectangle([cx-box_w//2, cy-box_h//2, cx+box_w//2, cy+box_h//2], radius=15, fill=(255, 240, 235), outline=(0, 128, 0), width=3)
 
         try:
-            es_f, en_f = ImageFont.truetype("arial.ttf", 22), ImageFont.truetype("arial.ttf", 18)
+            es_f, en_f = ImageFont.truetype("arial.ttf", 23), ImageFont.truetype("arial.ttf", 18)
         except:
             es_f = en_f = ImageFont.load_default()
 
@@ -160,8 +150,13 @@ class VideoGenerator:
             all_segments.append(v_seg)
 
         if all_segments:
-            final_path = os.path.join(self.output_dir.get(), "custom_pos_video.mp4")
+            # --- Cập nhật logic đặt tên file theo thời gian thực ---
+            time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_name = f"output_{time_str}.mp4"
+            final_path = os.path.join(self.output_dir.get(), file_name)
+            
             concatenate_videoclips(all_segments, method="compose").write_videofile(final_path, codec="libx264", audio_codec="aac", fps=5)
+            
             for i in range(len(lines)):
                 if os.path.exists(f"temp_{i}.mp3"): os.remove(f"temp_{i}.mp3")
             messagebox.showinfo("Xong!", f"Video đã lưu tại: {final_path}")
