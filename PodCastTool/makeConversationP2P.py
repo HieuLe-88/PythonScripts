@@ -13,7 +13,7 @@ class VideoGenerator:
     def __init__(self, root):
         self.root = root
         self.root.title("Multilingual Lesson Video Generator - Pro Version")
-        self.root.geometry("750x980")
+        self.root.geometry("750x980") # Đã sửa lỗi dấu ngoặc thành chữ x
 
         # Dữ liệu giọng đọc
         self.voices_data = {
@@ -30,8 +30,8 @@ class VideoGenerator:
         # Vị trí và Kích thước Box
         self.pos_left_var = tk.StringVar(value="6.5,4")
         self.pos_right_var = tk.StringVar(value="6.5,12")
-        self.box_width_var = tk.StringVar(value="400")   # Mặc định rộng 400
-        self.box_height_var = tk.StringVar(value="180")  # Mặc định cao 180
+        self.box_width_var = tk.StringVar(value="400")   
+        self.box_height_var = tk.StringVar(value="120")  
         
         self.bg_path = tk.StringVar(value="")
         self.output_dir = tk.StringVar(value=os.getcwd())
@@ -79,13 +79,11 @@ class VideoGenerator:
         design_frame = tk.LabelFrame(self.root, text=" 3. THIẾT KẾ BOX (VỊ TRÍ & KÍCH THƯỚC) ", font=("Arial", 10, "bold"), pady=10)
         design_frame.pack(fill="x", padx=20, pady=5)
         
-        # Vị trí
         tk.Label(design_frame, text="Y,X Box Trái:").grid(row=0, column=0, padx=10, pady=5)
         tk.Entry(design_frame, textvariable=self.pos_left_var, width=10).grid(row=0, column=1)
         tk.Label(design_frame, text="Y,X Box Phải:").grid(row=0, column=2, padx=10, pady=5)
         tk.Entry(design_frame, textvariable=self.pos_right_var, width=10).grid(row=0, column=3)
 
-        # Kích thước
         tk.Label(design_frame, text="Chiều Rộng:").grid(row=1, column=0, padx=10, pady=5)
         tk.Entry(design_frame, textvariable=self.box_width_var, width=10).grid(row=1, column=1)
         tk.Label(design_frame, text="Chiều Cao:").grid(row=1, column=2, padx=10, pady=5)
@@ -99,7 +97,6 @@ class VideoGenerator:
         tk.Button(other_frame, text="Chọn Ảnh Nền", command=self.browse_bg).grid(row=0, column=2, padx=5)
         tk.Button(other_frame, text="Thư Mục Lưu", command=self.browse_folder).grid(row=0, column=3, padx=5)
 
-        # NÚT BẮT ĐẦU
         self.btn = tk.Button(self.root, text="BẮT ĐẦU TẠO VIDEO", bg="#4CAF50", fg="white", 
                              font=("Arial", 12, "bold"), command=self.start_process, padx=40, pady=15)
         self.btn.pack(pady=20)
@@ -120,18 +117,10 @@ class VideoGenerator:
             tag = parts[0].upper()
             pos_type = "LEFT" if tag in ["M", "M1", "F1"] else "RIGHT"
             voice = self.voice_vars.get(tag, self.voice_vars["M"]).get()
-            
-            return {
-                "position_type": pos_type, 
-                "voice": voice, 
-                "text_1": parts[1], 
-                "text_2": parts[2], 
-                "text_3": parts[3] if len(parts) > 3 else "" 
-            }
+            return {"position_type": pos_type, "voice": voice, "text_1": parts[1], "text_2": parts[2], "text_3": parts[3] if len(parts) > 3 else ""}
         return None
 
     def create_frame(self, data, width=1280, height=720):
-        # Tạo nền
         if self.bg_path.get() and os.path.exists(self.bg_path.get()):
             img = Image.open(self.bg_path.get()).convert('RGB').resize((width, height), Image.Resampling.LANCZOS)
         else:
@@ -140,14 +129,12 @@ class VideoGenerator:
         draw = ImageDraw.Draw(img)
         is_chinese = (self.lang_var.get() == "Chinese")
 
-        # Lấy kích thước Box từ GUI
         try:
             b_w = int(self.box_width_var.get())
             b_h = int(self.box_height_var.get())
         except:
             b_w, b_h = 400, 180
 
-        # Lấy tọa độ Box
         pos_str = self.pos_left_var.get() if data['position_type'] == "LEFT" else self.pos_right_var.get()
         try:
             y_r, x_r = map(float, pos_str.split(','))
@@ -156,11 +143,12 @@ class VideoGenerator:
 
         cx, cy = int(width * (x_r / 16)), int(height * (y_r / 9))
         
-        # Vẽ Box
+        # --- THAY ĐỔI TẠI ĐÂY ---
+        # outline=(0, 0, 0) là màu Đen
+        # width=1 là độ dày viền mỏng (nhỏ hơn 75% so với mức 3 cũ)
         draw.rounded_rectangle([cx - b_w//2, cy - b_h//2, cx + b_w//2, cy + b_h//2], 
-                               radius=15, fill=(255, 240, 235), outline=(0, 128, 0), width=3)
+                               radius=15, fill=(255, 240, 235), outline=(0, 0, 0), width=1)
 
-        # Font (Ưu tiên font hỗ trợ tiếng Trung)
         def get_font(size):
             font_names = ["msyh.ttc", "simhei.ttf", "arial.ttf"]
             for f in font_names:
@@ -191,7 +179,6 @@ class VideoGenerator:
             txt_pinyin = wrap(data['text_2'], f_sub, b_w - padding)
             txt_hanzi = wrap(data['text_1'], f_main, b_w - padding)
             txt_eng = wrap(data['text_3'], f_eng, b_w - padding)
-
             draw.text((cx, cy - 45), txt_pinyin, fill="#555555", font=f_sub, anchor="mm", align="center")
             draw.text((cx, cy - 5), txt_hanzi, fill=(0, 100, 0), font=f_main, anchor="mm", align="center")
             draw.text((cx, cy + 45), txt_eng, fill="black", font=f_eng, anchor="mm", align="center")
@@ -215,16 +202,12 @@ class VideoGenerator:
         for i, line in enumerate(lines):
             data = self.parse_line(line)
             if not data: continue
-            
             temp_audio = f"temp_{i}.mp3"
             clean_txt = re.sub(r'[?/.()¿¡!]', '', data['text_1'])
-            
             asyncio.run(self.generate_audio(clean_txt, data['voice'], self.selected_speed.get(), temp_audio))
-            
             a_clip = AudioFileClip(temp_audio)
             silence = AudioClip(lambda t: [0, 0], duration=0.9, fps=44100)
             final_a = concatenate_audioclips([a_clip, silence])
-            
             frame_rgb = self.create_frame(data)
             v_seg = ImageClip(frame_rgb).set_duration(final_a.duration).set_audio(final_a)
             all_segments.append(v_seg)
@@ -233,10 +216,7 @@ class VideoGenerator:
             time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
             final_name = f"output_{self.lang_var.get()}_{time_str}.mp4"
             final_path = os.path.join(self.output_dir.get(), final_name)
-            
-            concatenate_videoclips(all_segments, method="compose").write_videofile(
-                final_path, codec="libx264", audio_codec="aac", fps=10)
-            
+            concatenate_videoclips(all_segments, method="compose").write_videofile(final_path, codec="libx264", audio_codec="aac", fps=10)
             for i in range(len(lines)):
                 if os.path.exists(f"temp_{i}.mp3"): os.remove(f"temp_{i}.mp3")
             messagebox.showinfo("Xong!", f"Video đã lưu: {final_path}")
