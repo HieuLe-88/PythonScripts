@@ -2,7 +2,6 @@ import asyncio
 import edge_tts
 import os
 import re
-import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import tkinter as tk
@@ -12,10 +11,9 @@ from moviepy.editor import AudioFileClip, concatenate_videoclips, concatenate_au
 class VideoGenerator:
     def __init__(self, root):
         self.root = root
-        self.root.title("Spanish Lesson - 6 Voices & Custom Background")
+        self.root.title("Spanish Lesson - Pro 16:9 Fixed")
         self.root.geometry("650x850")
 
-        # 1. Khai báo biến
         self.voice_vars = {
             "M":  tk.StringVar(value="es-ES-AlvaroNeural"),
             "M1": tk.StringVar(value="es-MX-JorgeNeural"),
@@ -32,7 +30,6 @@ class VideoGenerator:
         voices = ["es-ES-AlvaroNeural", "es-ES-ElviraNeural", "es-MX-JorgeNeural", 
                   "es-MX-DaliaNeural", "es-US-AlonsoNeural", "es-US-PalomaNeural"]
 
-        # 2. Giao diện chọn giọng
         tk.Label(root, text=" CÀI ĐẶT GIỌNG ĐỌC", font=("Arial", 12, "bold")).pack(pady=10)
         v_frame = tk.Frame(root)
         v_frame.pack()
@@ -42,44 +39,36 @@ class VideoGenerator:
             ttk.Combobox(v_frame, textvariable=var, values=voices, width=25).grid(row=row, column=1, padx=5, pady=2)
             row += 1
 
-        # 3. Giao diện chọn File Nền & Logo
         tk.Frame(root, height=2, bd=1, relief=tk.SUNKEN).pack(fill=tk.X, padx=20, pady=15)
         
-        # Background Chọn
-        bg_frame = tk.Frame(root)
-        bg_frame.pack(pady=5)
+        bg_frame = tk.Frame(root); bg_frame.pack(pady=5)
         tk.Label(bg_frame, text="Background Image:").pack(side=tk.LEFT)
         tk.Entry(bg_frame, textvariable=self.bg_path, width=30).pack(side=tk.LEFT, padx=5)
         tk.Button(bg_frame, text="Browse", command=self.browse_bg).pack(side=tk.LEFT)
 
-        # Logo Chọn
-        logo_frame = tk.Frame(root)
-        logo_frame.pack(pady=5)
+        logo_frame = tk.Frame(root); logo_frame.pack(pady=5)
         tk.Label(logo_frame, text="Watermark Logo:  ").pack(side=tk.LEFT)
         tk.Entry(logo_frame, textvariable=self.logo_path, width=30).pack(side=tk.LEFT, padx=5)
         tk.Button(logo_frame, text="Browse", command=self.browse_logo).pack(side=tk.LEFT)
 
-        # Folder lưu
         tk.Button(root, text="Select Output Folder", command=self.browse_folder).pack(pady=10)
 
-        # 4. Nút bắt đầu
         self.btn = tk.Button(root, text="START GENERATION", bg="#2196F3", fg="white", 
                              font=("Arial", 12, "bold"), command=self.start_process, padx=30, pady=10)
         self.btn.pack(pady=20)
-        self.status_label = tk.Label(root, text="Ready", fg="blue")
-        self.status_label.pack()
+        self.status_label = tk.Label(root, text="Ready", fg="blue"); self.status_label.pack()
 
     def browse_bg(self):
-        file = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg")])
-        if file: self.bg_path.set(file)
+        f = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg")])
+        if f: self.bg_path.set(f)
 
     def browse_logo(self):
-        file = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg")])
-        if file: self.logo_path.set(file)
+        f = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg")])
+        if f: self.logo_path.set(f)
 
     def browse_folder(self):
-        folder = filedialog.askdirectory()
-        if folder: self.output_dir.set(folder)
+        f = filedialog.askdirectory()
+        if f: self.output_dir.set(f)
 
     def parse_line(self, line):
         parts = line.split("|")
@@ -95,9 +84,10 @@ class VideoGenerator:
         return None
 
     def create_frame(self, es_text, en_text, position, width=1280, height=720):
-        # Kiểm tra nếu có background tùy chỉnh
+        # 1. Tạo ảnh nền đúng tỉ lệ 16:9
         if self.bg_path.get() and os.path.exists(self.bg_path.get()):
             img = Image.open(self.bg_path.get()).convert('RGB')
+            # Cắt và resize để đảm bảo đúng 16:9 không bị méo
             img = img.resize((width, height), Image.Resampling.LANCZOS)
         else:
             img = Image.new('RGB', (width, height), color=(255, 245, 240))
@@ -105,19 +95,17 @@ class VideoGenerator:
         draw = ImageDraw.Draw(img)
         cx = (width // 4) if position == "LEFT" else (3 * width // 4)
         cy = height // 2
-        box_w, box_h = 320, 120
+        box_w, box_h = 350, 150 # Tăng nhẹ kích thước box để cân đối 16:9
+        
         main_box = [cx - box_w//2, cy - box_h//2, cx + box_w//2, cy + box_h//2]
-
-        # Vẽ Box (có độ trong suốt nhẹ nếu dùng nền ảnh)
         draw.rounded_rectangle(main_box, radius=15, fill=(255, 240, 235), outline=(0, 128, 0), width=3)
 
         try:
-            es_font = ImageFont.truetype("arial.ttf", 24)
-            en_font = ImageFont.truetype("arial.ttf", 16)
+            es_font = ImageFont.truetype("arial.ttf", 26)
+            en_font = ImageFont.truetype("arial.ttf", 18)
         except:
             es_font = en_font = ImageFont.load_default()
 
-        # Chia dòng và vẽ chữ
         def wrap(t, f, w):
             words = t.split(' ')
             l, cur = [], []
@@ -129,15 +117,15 @@ class VideoGenerator:
 
         w_es = wrap(es_text, es_font, box_w - 40)
         w_en = wrap(en_text, en_font, box_w - 40)
-        draw.text((cx, cy - 15), w_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
-        draw.text((cx, cy + 20), w_en, fill="black", font=en_font, anchor="mm", align="center")
+        draw.text((cx, cy - 20), w_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
+        draw.text((cx, cy + 25), w_en, fill="black", font=en_font, anchor="mm", align="center")
 
-        # Vẽ Logo
         if self.logo_path.get() and os.path.exists(self.logo_path.get()):
             logo = Image.open(self.logo_path.get()).convert("RGBA")
-            logo.thumbnail((70, 70))
-            img.paste(logo, (width - 100, 30), logo)
+            logo.thumbnail((80, 80))
+            img.paste(logo, (width - 120, 40), logo)
 
+        # Quan trọng: Trả về mảng NumPy trực tiếp (Hệ màu RGB của PIL khớp với MoviePy)
         return np.array(img)
 
     async def generate_audio(self, text, voice, speed_str, filename):
@@ -161,23 +149,27 @@ class VideoGenerator:
             silence = AudioClip(lambda t: [0, 0], duration=1.5, fps=44100)
             final_a = concatenate_audioclips([a_clip, silence])
 
-            frame_bgr = self.create_frame(data['es_text'], data['en_text'], data['position'])
-            frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            # create_frame giờ trả về RGB chuẩn
+            frame_rgb = self.create_frame(data['es_text'], data['en_text'], data['position'])
             
+            # MoviePy ImageClip nhận diện RGB mặc định từ NumPy array
             v_seg = ImageClip(frame_rgb).set_duration(final_a.duration).set_audio(final_a)
             all_segments.append(v_seg)
 
         if all_segments:
-            final_path = os.path.join(self.output_dir.get(), "lesson_with_bg.mp4")
-            concatenate_videoclips(all_segments, method="compose").write_videofile(final_path, codec="libx264", fps=10)
+            final_path = os.path.join(self.output_dir.get(), "final_lesson_169.mp4")
+            # method="chain" giúp giữ tỉ lệ khung hình tốt hơn
+            final_video = concatenate_videoclips(all_segments, method="compose")
+            final_video.write_videofile(final_path, codec="libx264", audio_codec="aac", fps=24)
+            
             for i in range(len(lines)):
                 if os.path.exists(f"temp_{i}.mp3"): os.remove(f"temp_{i}.mp3")
-            messagebox.showinfo("Xong!", f"Video lưu tại: {final_path}")
+            messagebox.showinfo("Xong!", f"Video 16:9 đã lưu tại: {final_path}")
 
     def start_process(self):
         file = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
         if file:
-            self.status_label.config(text="Đang tạo video...", fg="red")
+            self.status_label.config(text="Đang xử lý 16:9...", fg="red")
             self.root.update()
             try: self.process_video(file)
             except Exception as e: messagebox.showerror("Lỗi", str(e))
