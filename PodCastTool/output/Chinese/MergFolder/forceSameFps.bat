@@ -1,0 +1,1 @@
+for %i in (*.mp4) do ffmpeg -i "%i" -r 10 -ar 44100 -ab 128k -s 1280x720 -vcodec libx264 -acodec aac "converted_%i"

@@ -13,53 +13,121 @@ class VideoGenerator:
     def __init__(self, root):
         self.root = root
         self.root.title("Multilingual Lesson Video Generator - Pro Version")
-        self.root.geometry("750x980") # Đã sửa lỗi dấu ngoặc thành chữ x
+        self.root.geometry("750x980")
 
         # Dữ liệu giọng đọc
         self.voices_data = {
-            "Spanish": ["es-ES-AlvaroNeural", "es-ES-ElviraNeural", "es-MX-JorgeNeural", 
-                        "es-MX-DaliaNeural", "es-US-AlonsoNeural", "es-US-PalomaNeural"],
-            "Chinese": ["zh-CN-YunxiNeural", "zh-CN-XiaoxiaoNeural", "zh-CN-YunjianNeural", 
-                        "zh-CN-XiaoyiNeural", "zh-HK-HiuGaaiNeural", "zh-TW-HsiaoChenNeural"]
+            "Spanish": {
+                "male": [
+                    "es-ES-AlvaroNeural",
+                    "es-MX-JorgeNeural",
+                    "es-US-AlonsoNeural",
+                    "es-ES-GonzaloNeural",
+                    "es-MX-LibertoNeural"
+                ],
+                "female": [
+                    "es-ES-ElviraNeural",
+                    "es-MX-DaliaNeural",
+                    "es-US-PalomaNeural",
+                    #"es-ES-LaiaNeural",
+                    #"es-MX-CarlotaNeural"
+                    "es-AR-ElenaNeural",
+                    "es-CO-SalomeNeural"                    
+                ]
+            },
+            "Chinese": {
+                "male": [
+                    "zh-CN-YunxiNeural",
+                    "zh-CN-YunjianNeural",
+                    "zh-HK-HiuMaanNeural",
+                    "zh-TW-YunJheNeural",
+                    "zh-CN-YunyangNeural"
+                ],
+                "female": [
+                    "zh-CN-XiaoxiaoNeural",
+                    "zh-HK-HiuGaaiNeural",
+                    "zh-TW-HsiaoChenNeural",
+                    "zh-CN-XiaoniniNeural",
+                    "zh-CN-XiaoyiNeural"
+                ]
+            }
         }
 
-        # Biến điều khiển giao diện
+        # Biến điều khiển
         self.lang_var = tk.StringVar(value="Spanish")
         self.voice_vars = {tag: tk.StringVar() for tag in ["M", "M1", "M2", "F", "F1", "F2"]}
         
-        # Vị trí và Kích thước Box
         self.pos_left_var = tk.StringVar(value="6.5,4")
         self.pos_right_var = tk.StringVar(value="6.5,12")
         self.box_width_var = tk.StringVar(value="400")   
         self.box_height_var = tk.StringVar(value="120")  
+        # Single-reader mode: show single full-width bottom box
+        self.single_reader_var = tk.BooleanVar(value=False)
         
+        # Biến cho LOGO
+        self.logo_path = tk.StringVar(value="")
+        self.logo_size_var = tk.StringVar(value="9") # % so với chiều rộng video
+        self.logo_pos_var = tk.StringVar(value="0.7,15.3") # Y,X (Mặc định góc trên bên phải)
+
         self.bg_path = tk.StringVar(value="")
         self.output_dir = tk.StringVar(value=os.getcwd())
         self.selected_speed = tk.StringVar(value="100%")
+        # Engine selection: Edge TTS (legacy) or Gemini (use external audio + SRT)
+        self.engine_var = tk.StringVar(value="Edge TTTS")
+        # Gemini inputs
+        self.gemini_audio = tk.StringVar(value="")
+        self.gemini_srt = tk.StringVar(value="")
+
+        # Thêm biến điều khiển vị trí F
+        self.f_left_var = tk.StringVar(value="LEFT")  # "LEFT" hoặc "RIGHT"
 
         self.set_default_voices()
         self.setup_gui()
 
     def set_default_voices(self):
         lang = self.lang_var.get()
-        v_list = self.voices_data[lang]
-        for i, tag in enumerate(["M", "M1", "M2", "F", "F1", "F2"]):
-            self.voice_vars[tag].set(v_list[i % len(v_list)])
+        males = self.voices_data[lang]["male"]
+        females = self.voices_data[lang]["female"]
+        mapping = {
+            "M":  males[0],
+            "M1": males[0],
+            "M2": males[1],
+            "F":  females[0],
+            "F1": females[0],
+            "F2": females[4]
+        }
+        for tag in mapping:
+            if tag in self.voice_vars:
+                self.voice_vars[tag].set(mapping[tag])
+
 
     def update_voice_options(self, event=None):
         lang = self.lang_var.get()
-        new_values = self.voices_data[lang]
-        for cb in self.voice_combos:
-            cb['values'] = new_values
-        self.set_default_voices()
+        males = self.voices_data[lang]["male"]
+        females = self.voices_data[lang]["female"]
+        tags = ["M", "M1", "M2", "F", "F1", "F2"]
+        for i, tag in enumerate(tags):
+            gender = "male" if tag.startswith("M") else "female"
+            values = males if gender == "male" else females
+            self.voice_combos[i]['values'] = values
+            # Nếu giá trị hiện tại không còn hợp lệ, reset về mặc định
+            if self.voice_vars[tag].get() not in values:
+                self.voice_vars[tag].set(values[0])
 
     def setup_gui(self):
         # 1. CHỌN NGÔN NGỮ
         lang_frame = tk.LabelFrame(self.root, text=" 1. CHỌN NGÔN NGỮ ", font=("Arial", 10, "bold"), pady=10)
         lang_frame.pack(fill="x", padx=20, pady=5)
         ttk.Combobox(lang_frame, textvariable=self.lang_var, values=["Spanish", "Chinese"], 
-                     state="readonly", width=20).pack()
+                      state="readonly", width=20).pack()
         self.lang_var.trace("w", lambda *args: self.update_voice_options())
+
+        # 1.1. Chọn vị trí F
+        posF_frame = tk.Frame(self.root)
+        posF_frame.pack(pady=2)
+        tk.Label(posF_frame, text="Vị trí F:").pack(side="left")
+        ttk.Combobox(posF_frame, textvariable=self.f_left_var, values=["LEFT", "RIGHT"], state="readonly", width=8).pack(side="left")
+        tk.Label(posF_frame, text="(F bên trái thì M sẽ bên phải và ngược lại)").pack(side="left")
 
         # 2. CÀI ĐẶT GIỌNG ĐỌC
         v_frame = tk.LabelFrame(self.root, text=" 2. CÀI ĐẶT GIỌNG ĐỌC ", font=("Arial", 10, "bold"), pady=10)
@@ -70,38 +138,81 @@ class VideoGenerator:
         tags = ["M", "M1", "M2", "F", "F1", "F2"]
         for i, tag in enumerate(tags):
             r, c = divmod(i, 2)
-            tk.Label(container, text=f"Giọng {tag}:").grid(row=r, column=c*2, padx=5, pady=2, sticky="e")
-            cb = ttk.Combobox(container, textvariable=self.voice_vars[tag], values=self.voices_data[self.lang_var.get()], width=20)
+            gender = "male" if tag.startswith("M") else "female"
+            values = self.voices_data[self.lang_var.get()][gender]
+            tk.Label(container, text=f"{tag}:").grid(row=r, column=c*2, padx=5, pady=2, sticky="e")
+            cb = ttk.Combobox(container, textvariable=self.voice_vars[tag], values=values, width=25)
             cb.grid(row=r, column=c*2+1, padx=5, pady=2)
             self.voice_combos.append(cb)
 
-        # 3. THIẾT KẾ BOX (VỊ TRÍ & KÍCH THƯỚC)
+        # 3. THIẾT KẾ BOX
         design_frame = tk.LabelFrame(self.root, text=" 3. THIẾT KẾ BOX (VỊ TRÍ & KÍCH THƯỚC) ", font=("Arial", 10, "bold"), pady=10)
         design_frame.pack(fill="x", padx=20, pady=5)
         
         tk.Label(design_frame, text="Y,X Box Trái:").grid(row=0, column=0, padx=10, pady=5)
-        tk.Entry(design_frame, textvariable=self.pos_left_var, width=10).grid(row=0, column=1)
+        self.pos_left_entry = tk.Entry(design_frame, textvariable=self.pos_left_var, width=10)
+        self.pos_left_entry.grid(row=0, column=1)
         tk.Label(design_frame, text="Y,X Box Phải:").grid(row=0, column=2, padx=10, pady=5)
-        tk.Entry(design_frame, textvariable=self.pos_right_var, width=10).grid(row=0, column=3)
+        self.pos_right_entry = tk.Entry(design_frame, textvariable=self.pos_right_var, width=10)
+        self.pos_right_entry.grid(row=0, column=3)
 
         tk.Label(design_frame, text="Chiều Rộng:").grid(row=1, column=0, padx=10, pady=5)
-        tk.Entry(design_frame, textvariable=self.box_width_var, width=10).grid(row=1, column=1)
+        self.box_width_entry = tk.Entry(design_frame, textvariable=self.box_width_var, width=10)
+        self.box_width_entry.grid(row=1, column=1)
         tk.Label(design_frame, text="Chiều Cao:").grid(row=1, column=2, padx=10, pady=5)
-        tk.Entry(design_frame, textvariable=self.box_height_var, width=10).grid(row=1, column=3)
+        self.box_height_entry = tk.Entry(design_frame, textvariable=self.box_height_var, width=10)
+        self.box_height_entry.grid(row=1, column=3)
+        tk.Checkbutton(design_frame, text="1 người đọc (box cố định ở đáy, full-width)", variable=self.single_reader_var).grid(row=2, column=0, columnspan=4, pady=6)
+        # When single-reader toggles, enable/disable position/size inputs
+        self.single_reader_var.trace("w", lambda *args: self.update_single_reader_ui())
+        # Initialize state
+        self.update_single_reader_ui()
 
-        # 4. CẤU HÌNH KHÁC
+        # 4. CÀI ĐẶT LOGO
+        logo_frame = tk.LabelFrame(self.root, text=" 4. CÀI ĐẶT LOGO ", font=("Arial", 10, "bold"), pady=10)
+        logo_frame.pack(fill="x", padx=20, pady=5)
+        
+        tk.Button(logo_frame, text="Chọn File Logo", command=self.browse_logo).grid(row=0, column=0, padx=10)
+        tk.Label(logo_frame, textvariable=self.logo_path, fg="gray", width=30).grid(row=0, column=1, columnspan=3)
+        
+        tk.Label(logo_frame, text="Size (%):").grid(row=1, column=0, pady=5)
+        tk.Entry(logo_frame, textvariable=self.logo_size_var, width=10).grid(row=1, column=1)
+        tk.Label(logo_frame, text="Tọa độ Y,X:").grid(row=1, column=2)
+        tk.Entry(logo_frame, textvariable=self.logo_pos_var, width=10).grid(row=1, column=3)
+
+        # 5. CẤU HÌNH KHÁC
         other_frame = tk.Frame(self.root)
         other_frame.pack(pady=10)
         tk.Label(other_frame, text="Tốc độ:").grid(row=0, column=0)
-        ttk.Combobox(other_frame, textvariable=self.selected_speed, values=[f"{i}%" for i in range(50, 160, 10)], width=8).grid(row=0, column=1, padx=10)
+        ttk.Combobox(
+            other_frame,
+            textvariable=self.selected_speed,
+            values=[f"{i}%" for i in range(50, 145, 5)],
+            width=8
+        ).grid(row=0, column=1, padx=5)
         tk.Button(other_frame, text="Chọn Ảnh Nền", command=self.browse_bg).grid(row=0, column=2, padx=5)
         tk.Button(other_frame, text="Thư Mục Lưu", command=self.browse_folder).grid(row=0, column=3, padx=5)
 
         self.btn = tk.Button(self.root, text="BẮT ĐẦU TẠO VIDEO", bg="#4CAF50", fg="white", 
-                             font=("Arial", 12, "bold"), command=self.start_process, padx=40, pady=15)
+                               font=("Arial", 12, "bold"), command=self.start_process, padx=40, pady=15)
         self.btn.pack(pady=20)
         self.status_label = tk.Label(self.root, text="Sẵn sàng", fg="blue")
         self.status_label.pack()
+
+        # 6. ENGINE SELECTION (Edge TTTS or Gemini)
+        engine_frame = tk.LabelFrame(self.root, text=" 6. CHỌN ENGINE ", font=("Arial", 10, "bold"), pady=8)
+        engine_frame.pack(fill="x", padx=20, pady=5)
+        ttk.Combobox(engine_frame, textvariable=self.engine_var, values=["Edge TTTS", "Gemini"], state="readonly", width=20).pack(side="left", padx=8)
+        tk.Button(engine_frame, text="Chọn Gemini Audio", command=self.browse_gemini_audio).pack(side="left", padx=6)
+        tk.Label(engine_frame, textvariable=self.gemini_audio, fg="gray", width=28).pack(side="left")
+        tk.Button(engine_frame, text="Chọn Gemini SRT", command=self.browse_gemini_srt).pack(side="left", padx=6)
+        tk.Label(engine_frame, textvariable=self.gemini_srt, fg="gray", width=28).pack(side="left")
+        self.engine_var.trace("w", lambda *args: self.update_engine_ui())
+        self.update_engine_ui()
+
+    def browse_logo(self):
+        f = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg *.webp")])
+        if f: self.logo_path.set(f)
 
     def browse_bg(self):
         f = filedialog.askopenfilename()
@@ -115,10 +226,131 @@ class VideoGenerator:
         parts = [p.strip() for p in line.split("|")]
         if len(parts) >= 3:
             tag = parts[0].upper()
-            pos_type = "LEFT" if tag in ["M", "M1", "F1"] else "RIGHT"
+            # Xác định vị trí: F1/M1 bên trái, F2/M2 bên phải
+            if tag in ["F1", "M1"]:
+                pos_type = self.f_left_var.get()
+            elif tag in ["F2", "M2"]:
+                pos_type = "RIGHT" if self.f_left_var.get() == "LEFT" else "LEFT"
+            elif tag.startswith("F"):
+                pos_type = self.f_left_var.get()
+            elif tag.startswith("M"):
+                pos_type = "RIGHT" if self.f_left_var.get() == "LEFT" else "LEFT"
+            else:
+                pos_type = "LEFT"
+            # Lấy đúng voice theo tag, fallback về "M"
             voice = self.voice_vars.get(tag, self.voice_vars["M"]).get()
-            return {"position_type": pos_type, "voice": voice, "text_1": parts[1], "text_2": parts[2], "text_3": parts[3] if len(parts) > 3 else ""}
+            return {
+                "position_type": pos_type,
+                "voice": voice,
+                "text_1": parts[1],
+                "text_2": parts[2],
+                "text_3": parts[3] if len(parts) > 3 else ""
+            }
         return None
+
+    def browse_gemini_audio(self):
+        f = filedialog.askopenfilename(filetypes=[("Audio files", "*.mp3 *.wav *.m4a *.flac")])
+        if f: self.gemini_audio.set(f)
+
+    def browse_gemini_srt(self):
+        f = filedialog.askopenfilename(filetypes=[("SRT files", "*.srt *.txt")])
+        if f: self.gemini_srt.set(f)
+
+    def update_engine_ui(self):
+        # Enable/disable gemini file labels/buttons depending on selection
+        # (We keep the controls visible; selection affects behavior on start)
+        pass
+
+    def update_single_reader_ui(self):
+        try:
+            disabled = 'disabled' if self.single_reader_var.get() else 'normal'
+        except Exception:
+            disabled = 'normal'
+        for w in ['pos_left_entry', 'pos_right_entry', 'box_width_entry', 'box_height_entry']:
+            ew = getattr(self, w, None)
+            if ew:
+                try:
+                    ew.config(state=disabled)
+                except Exception:
+                    pass
+
+    def parse_srt(self, srt_path):
+        # Returns list of {start, end, text}
+        cues = []
+        if not os.path.exists(srt_path):
+            return cues
+        with open(srt_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        parts = re.split(r"\n\s*\n", content.strip())
+        for p in parts:
+            lines = [l.strip() for l in p.splitlines() if l.strip()]
+            if len(lines) >= 2:
+                # second line is timing
+                timing = lines[1]
+                m = re.match(r"(\d{2}:\d{2}:\d{2}[,\.]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[,\.]\d{3})", timing)
+                text = ' '.join(lines[2:]) if len(lines) > 2 else lines[-1]
+                if m:
+                    def parse_time(s):
+                        s = s.replace(',', '.')
+                        hh, mm, rest = s.split(':')
+                        ss = float(rest)
+                        return int(hh)*3600 + int(mm)*60 + ss
+                    start = parse_time(m.group(1))
+                    end = parse_time(m.group(2))
+                    cues.append({"start": start, "end": end, "text": text})
+        return cues
+
+    def process_video_gemini(self, text_file, audio_file, srt_file):
+        # Read text input -> map chinese text to pinyin and english
+        with open(text_file, 'r', encoding='utf-8') as f:
+            lines = [l.strip() for l in f.readlines() if l.strip()]
+        mapping = {}
+        for line in lines:
+            parsed = self.parse_line(line)
+            if parsed:
+                key = parsed['text_1'].strip()
+                mapping[key] = parsed
+
+        cues = self.parse_srt(srt_file)
+        if not cues:
+            messagebox.showerror("Lỗi", "Không tìm thấy cue trong SRT")
+            return
+
+        audio_clip = AudioFileClip(audio_file)
+        all_segments = []
+        for i, cue in enumerate(cues):
+            txt = cue['text'].strip()
+            # try exact match or trimmed match
+            key = txt
+            data = mapping.get(key)
+            # If not exact, try simplified whitespace/punctuation normalization
+            if not data:
+                norm = re.sub(r'[\s\n\r]+', '', txt)
+                for k in mapping:
+                    if re.sub(r'[\s\n\r]+', '', k) == norm:
+                        data = mapping[k]
+                        break
+            # If still not found, create fallback data
+            if not data:
+                data = {'text_1': txt, 'text_2': '', 'text_3': '', 'position_type': 'LEFT', 'voice': self.voice_vars['M'].get()}
+
+            duration = max(0.1, cue['end'] - cue['start'])
+            frame_rgb = self.create_frame(data)
+            # clip audio for this cue
+            try:
+                audio_sub = audio_clip.subclip(cue['start'], cue['end'])
+            except Exception:
+                # fallback: clip from start for duration
+                audio_sub = audio_clip.subclip(0, min(duration, audio_clip.duration))
+            v_seg = ImageClip(frame_rgb).set_duration(duration).set_audio(audio_sub)
+            all_segments.append(v_seg)
+
+        if all_segments:
+            time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+            final_name = f"output_Gemini_{time_str}.mp4"
+            final_path = os.path.join(self.output_dir.get(), final_name)
+            concatenate_videoclips(all_segments, method="compose").write_videofile(final_path, codec="libx264", audio_codec="aac", fps=10)
+            messagebox.showinfo("Xong!", f"Video đã lưu: {final_path}")
 
     def create_frame(self, data, width=1280, height=720):
         if self.bg_path.get() and os.path.exists(self.bg_path.get()):
@@ -127,38 +359,67 @@ class VideoGenerator:
             img = Image.new('RGB', (width, height), color=(255, 245, 240))
         
         draw = ImageDraw.Draw(img)
-        is_chinese = (self.lang_var.get() == "Chinese")
+        # Treat as Chinese (show pinyin) when language is Chinese or when the data contains pinyin text
+        is_chinese = (self.lang_var.get() == "Chinese") or bool(data.get('text_2'))
 
+        # Vẽ Box văn bản
         try:
             b_w = int(self.box_width_var.get())
             b_h = int(self.box_height_var.get())
         except:
             b_w, b_h = 400, 180
 
-        pos_str = self.pos_left_var.get() if data['position_type'] == "LEFT" else self.pos_right_var.get()
-        try:
-            y_r, x_r = map(float, pos_str.split(','))
-        except:
-            y_r, x_r = (6.5, 4) if data['position_type'] == "LEFT" else (6.5, 12)
+        # If single-reader mode is enabled, ignore position/width GUI settings
+        if getattr(self, 'single_reader_var', None) and self.single_reader_var.get():
+            margin = 20
+            b_w = width - margin * 2
+            b_h = 120
+            cx = width // 2
+            cy = height - b_h // 2 - margin
+        else:
+            pos_str = self.pos_left_var.get() if data['position_type'] == "LEFT" else self.pos_right_var.get()
+            try:
+                y_r, x_r = map(float, pos_str.split(','))
+            except:
+                y_r, x_r = (6.5, 4) if data['position_type'] == "LEFT" else (6.5, 12)
 
-        cx, cy = int(width * (x_r / 16)), int(height * (y_r / 9))
-        
-        # --- THAY ĐỔI TẠI ĐÂY ---
-        # outline=(0, 0, 0) là màu Đen
-        # width=1 là độ dày viền mỏng (nhỏ hơn 75% so với mức 3 cũ)
+            cx, cy = int(width * (x_r / 16)), int(height * (y_r / 9))
         draw.rounded_rectangle([cx - b_w//2, cy - b_h//2, cx + b_w//2, cy + b_h//2], 
-                               radius=15, fill=(255, 240, 235), outline=(0, 0, 0), width=1)
+                                radius=15, fill=(255, 240, 235), outline=(0, 0, 0), width=1)
 
-        def get_font(size):
-            font_names = ["msyh.ttc", "simhei.ttf", "arial.ttf"]
-            for f in font_names:
-                try: return ImageFont.truetype(f, size)
+        # Chèn LOGO
+        if self.logo_path.get() and os.path.exists(self.logo_path.get()):
+            try:
+                logo = Image.open(self.logo_path.get()).convert("RGBA")
+                l_scale = int(self.logo_size_var.get()) / 100
+                l_width = int(width * l_scale)
+                w_percent = (l_width / float(logo.size[0]))
+                l_height = int((float(logo.size[1]) * float(w_percent)))
+                logo = logo.resize((l_width, l_height), Image.Resampling.LANCZOS)
+                ly_r, lx_r = map(float, self.logo_pos_var.get().split(','))
+                lx, ly = int(width * (lx_r / 16)) - l_width//2, int(height * (ly_r / 9)) - l_height//2
+                img.paste(logo, (lx, ly), logo)
+            except Exception as e:
+                print(f"Lỗi chèn logo: {e}")
+
+        # CẬP NHẬT FONT CHỮ VÀ KÍCH THƯỚC
+        def get_font(name, size):
+            # Ưu tiên tìm font trong hệ thống Windows
+            paths = [
+                f"C:\\Windows\\Fonts\\{name}",
+                name
+            ]
+            for p in paths:
+                try: return ImageFont.truetype(p, size)
                 except: continue
             return ImageFont.load_default()
 
-        f_main = get_font(22) 
-        f_sub = get_font(11) 
-        f_eng = get_font(15)
+        # Font Hanzi/Main (Tiếng Trung hoặc Tây Ban Nha)
+        f_main = get_font("msyh.ttc", 23) # Tăng nhẹ size
+        # Font Pinyin: Đã tăng từ 11 lên 15
+        f_pinyin = get_font("arial.ttf", 15) 
+        # Font English/Sub: Chuyển sang Arial
+        f_eng = get_font("arial.ttf", 16) 
 
         def wrap(t, f, max_w):
             if not t: return ""
@@ -176,10 +437,12 @@ class VideoGenerator:
 
         padding = 40
         if is_chinese:
-            txt_pinyin = wrap(data['text_2'], f_sub, b_w - padding)
+            txt_pinyin = wrap(data['text_2'], f_pinyin, b_w - padding)
             txt_hanzi = wrap(data['text_1'], f_main, b_w - padding)
             txt_eng = wrap(data['text_3'], f_eng, b_w - padding)
-            draw.text((cx, cy - 45), txt_pinyin, fill="#555555", font=f_sub, anchor="mm", align="center")
+            
+            # Điều chỉnh vị trí Y để các chữ không đè nhau khi Pinyin to hơn
+            draw.text((cx, cy - 45), txt_pinyin, fill="#555555", font=f_pinyin, anchor="mm", align="center")
             draw.text((cx, cy - 5), txt_hanzi, fill=(0, 100, 0), font=f_main, anchor="mm", align="center")
             draw.text((cx, cy + 45), txt_eng, fill="black", font=f_eng, anchor="mm", align="center")
         else:
@@ -222,15 +485,31 @@ class VideoGenerator:
             messagebox.showinfo("Xong!", f"Video đã lưu: {final_path}")
 
     def start_process(self):
+        # Choose main text file (same format as before)
         file = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
-        if file:
-            self.status_label.config(text="Đang xử lý... Vui lòng đợi", fg="red")
-            self.root.update()
-            try:
+        if not file:
+            return
+        self.status_label.config(text="Đang xử lý... Vui lòng đợi", fg="red")
+        self.root.update()
+        try:
+            if self.engine_var.get() == "Gemini":
+                # Ensure gemini audio and srt are provided; if not, prompt
+                if not self.gemini_audio.get():
+                    f = filedialog.askopenfilename(title="Chọn Gemini Audio", filetypes=[("Audio files", "*.mp3 *.wav *.m4a *.flac")])
+                    if f: self.gemini_audio.set(f)
+                if not self.gemini_srt.get():
+                    s = filedialog.askopenfilename(title="Chọn Gemini SRT", filetypes=[("SRT files", "*.srt *.txt")])
+                    if s: self.gemini_srt.set(s)
+                if not self.gemini_audio.get() or not self.gemini_srt.get():
+                    messagebox.showerror("Thiếu file", "Vui lòng cung cấp file audio và SRT cho Gemini")
+                else:
+                    self.process_video_gemini(file, self.gemini_audio.get(), self.gemini_srt.get())
+            else:
+                # Legacy Edge TTTS behavior
                 self.process_video(file)
-            except Exception as e:
-                messagebox.showerror("Lỗi", str(e))
-            self.status_label.config(text="Sẵn sàng", fg="blue")
+        except Exception as e:
+            messagebox.showerror("Lỗi", str(e))
+        self.status_label.config(text="Sẵn sàng", fg="blue")
 
 if __name__ == "__main__":
     root = tk.Tk()

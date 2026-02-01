@@ -1,2 +1,9 @@
-M|你好，今天我们聊聊暑假的旅行计划吧。|Nǐ hǎo, jīntiān wǒmen liáo liáo shǔjià de lǚxíng jìhuà ba.|Hi, let's talk about summer travel plans today. 
-F|好的，你打算先去哪里？|Hǎo de, nǐ dǎsuàn xiān qù nǎlǐ?|Sure, where do you plan to go first?
+
+
+M|你好，你常坐地铁吗？|Nǐ hǎo, nǐ cháng zuò dìtiě ma?|Hello, do you often take the metro?
+M|你平时上班忙吗？|Nǐ píngshí shàngbān máng ma?|Is your work busy?
+M|有时忙，有时不忙，很灵活。|Yǒushí máng, yǒushí bú máng, hěn línghuó.|Sometimes busy, sometimes not, quite flexible.
+
+M|那我们就差不多到站了。|Nà wǒmen jiù chà bù duō dào zhàn le.|We’re almost at our station.
+M|好的，谢谢你聊天！再见！|Hǎo de, xièxiè nǐ liáotiān! Zàijiàn!|Okay, thanks for chatting! Goodbye!
+
