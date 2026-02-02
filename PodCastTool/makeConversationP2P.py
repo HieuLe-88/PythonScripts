@@ -70,6 +70,9 @@ class VideoGenerator:
         self.logo_pos_var = tk.StringVar(value="0.7,15.3") # Y,X (Mặc định góc trên bên phải)
 
         self.bg_path = tk.StringVar(value="")
+        # Support multiple title-specific images: mapping titlekey -> filepath
+        self.bg_images = {}
+        self.bg_images_var = tk.StringVar(value="")
         self.output_dir = tk.StringVar(value=os.getcwd())
         self.selected_speed = tk.StringVar(value="100%")
         # Engine selection: Edge TTS (legacy) or Gemini (use external audio + SRT)
@@ -190,7 +193,8 @@ class VideoGenerator:
             values=[f"{i}%" for i in range(50, 145, 5)],
             width=8
         ).grid(row=0, column=1, padx=5)
-        tk.Button(other_frame, text="Chọn Ảnh Nền", command=self.browse_bg).grid(row=0, column=2, padx=5)
+        tk.Button(other_frame, text="Chọn Ảnh Nền / Ảnh theo title", command=self.browse_bg).grid(row=0, column=2, padx=5)
+        tk.Label(other_frame, textvariable=self.bg_images_var, fg="gray", width=28).grid(row=0, column=4, padx=6)
         tk.Button(other_frame, text="Thư Mục Lưu", command=self.browse_folder).grid(row=0, column=3, padx=5)
 
         self.btn = tk.Button(self.root, text="BẮT ĐẦU TẠO VIDEO", bg="#4CAF50", fg="white", 
@@ -215,8 +219,32 @@ class VideoGenerator:
         if f: self.logo_path.set(f)
 
     def browse_bg(self):
-        f = filedialog.askopenfilename()
-        if f: self.bg_path.set(f)
+        # Allow selecting one background image or multiple title-specific images
+        files = filedialog.askopenfilenames(title="Chọn 1 hoặc nhiều ảnh (tên: title1, title2, ...)",
+                                            filetypes=[("Image files", "*.png *.jpg *.jpeg *.webp")])
+        if not files:
+            return
+        files = list(files)
+        if len(files) == 1:
+            # single image -> use as default background
+            self.bg_path.set(files[0])
+            self.bg_images.clear()
+            self.bg_images_var.set(os.path.basename(files[0]))
+        else:
+            # multiple images -> populate mapping by filename (basename without ext)
+            self.bg_path.set("")
+            self.bg_images.clear()
+            added = []
+            for f in files:
+                name = os.path.splitext(os.path.basename(f))[0]
+                key = re.sub(r"\W+", "", name).lower()
+                if key:
+                    self.bg_images[key] = f
+                    added.append(f"{key}")
+            if added:
+                self.bg_images_var.set(f"{len(added)} images: " + ",".join(added))
+            else:
+                self.bg_images_var.set("No valid title images selected")
         
     def browse_folder(self):
         f = filedialog.askdirectory()
@@ -304,10 +332,18 @@ class VideoGenerator:
         # Read text input -> map chinese text to pinyin and english
         with open(text_file, 'r', encoding='utf-8') as f:
             lines = [l.strip() for l in f.readlines() if l.strip()]
+        # Support title markers like: [Title 1] ... and attach title_key to parsed entries
         mapping = {}
+        current_title = None
         for line in lines:
+            m = re.match(r"\s*\[([^\]]+)\]", line)
+            if m:
+                title_raw = m.group(1)
+                current_title = re.sub(r"\W+", "", title_raw).lower()
+                continue
             parsed = self.parse_line(line)
             if parsed:
+                parsed['title_key'] = current_title
                 key = parsed['text_1'].strip()
                 mapping[key] = parsed
 
@@ -353,7 +389,16 @@ class VideoGenerator:
             messagebox.showinfo("Xong!", f"Video đã lưu: {final_path}")
 
     def create_frame(self, data, width=1280, height=720):
-        if self.bg_path.get() and os.path.exists(self.bg_path.get()):
+        # Determine background image: prefer title-specific image if provided
+        title_img = None
+        if data and data.get('title_key') and data.get('title_key') in self.bg_images:
+            candidate = self.bg_images.get(data.get('title_key'))
+            if candidate and os.path.exists(candidate):
+                title_img = candidate
+
+        if title_img:
+            img = Image.open(title_img).convert('RGB').resize((width, height), Image.Resampling.LANCZOS)
+        elif self.bg_path.get() and os.path.exists(self.bg_path.get()):
             img = Image.open(self.bg_path.get()).convert('RGB').resize((width, height), Image.Resampling.LANCZOS)
         else:
             img = Image.new('RGB', (width, height), color=(255, 245, 240))
@@ -459,12 +504,22 @@ class VideoGenerator:
 
     def process_video(self, file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
-            lines = [l for l in f.readlines() if l.strip()]
+            lines = [l.strip() for l in f.readlines() if l.strip()]
 
         all_segments = []
-        for i, line in enumerate(lines):
+        current_title = None
+        seg_index = 0
+        for line in lines:
+            m = re.match(r"\s*\[([^\]]+)\]", line)
+            if m:
+                current_title = re.sub(r"\W+", "", m.group(1)).lower()
+                continue
             data = self.parse_line(line)
-            if not data: continue
+            if not data:
+                continue
+            data['title_key'] = current_title
+            i = seg_index
+            seg_index += 1
             temp_audio = f"temp_{i}.mp3"
             clean_txt = re.sub(r'[?/.()¿¡!]', '', data['text_1'])
             asyncio.run(self.generate_audio(clean_txt, data['voice'], self.selected_speed.get(), temp_audio))

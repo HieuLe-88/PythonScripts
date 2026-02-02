@@ -1,9 +1,14 @@
 
+[Title 1] 早起与晨练 - Buổi sáng thức dậy và tập thể dục
 
-M|你好，你常坐地铁吗？|Nǐ hǎo, nǐ cháng zuò dìtiě ma?|Hello, do you often take the metro?
-M|你平时上班忙吗？|Nǐ píngshí shàngbān máng ma?|Is your work busy?
-M|有时忙，有时不忙，很灵活。|Yǒushí máng, yǒushí bú máng, hěn línghuó.|Sometimes busy, sometimes not, quite flexible.
+F|大卫每天早上七点准时起床。|Dàwèi měitiān zǎoshang qī diǎn zhǔnshí qǐchuáng.|David wakes up on time at seven every morning.
+F|他穿上运动服，去操场跑三公里。|Tā chuān shàng yùndòngfú, qù cāochǎng pǎo sān gōnglǐ.|He puts on sportswear and goes to the playground to run three kilometers.
+F|清晨的空气很新鲜，让他觉得很有精神。|Qīngchén de kōngqì hěn xīnxiān, ràng tā juédé hěn yǒu jīngshén.|The early morning air is very fresh, making him feel very energetic.
+F|跑步以后，他在路边的小摊买了一个热包子。|Pǎobù yǐhòu, tā zài lùbiān de xiǎotān mǎile yīgè rè bāozi.|After running, he bought a hot steamed bun at a roadside stall.
 
-M|那我们就差不多到站了。|Nà wǒmen jiù chà bù duō dào zhàn le.|We’re almost at our station.
-M|好的，谢谢你聊天！再见！|Hǎo de, xièxiè nǐ liáotiān! Zàijiàn!|Okay, thanks for chatting! Goodbye!
+[Title 2] 繁忙的汉语课 - Lớp học tiếng Trung bận rộn
 
+F|上午九点，大卫坐在教室里听老师讲课。|Shàngwǔ jiǔ diǎn, Dàwèi zuò zài jiàoshì lǐ tīng lǎoshī jiǎngkè.|At 9:00 AM, David sits in the classroom listening to the teacher's lecture.
+F|他正拿着毛笔，认真地在纸上练习写汉字。|Tā zhèng názhe máobǐ, rènzhēn de zài zhǐ shàng liànxí xiě hànzì.|He is holding a brush, seriously practicing writing Chinese characters on paper.
+F|黑板上写满了今天要做的新生词和语法。|Hēibǎn shàng xiě mǎnle jīntiān yào zuò de xīn shēngcí hé yǔfǎ.|The blackboard is filled with new vocabulary and grammar to be covered today.
+F|虽然汉语很难，但他觉得学习的过程很有趣味。|Suīrán Hànyǔ hěn nán, dànshì tā juédé xuéxí de guòchéng hěn yǒu qùwèi.|Although Chinese is difficult, he finds the learning process very interesting.
