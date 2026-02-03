@@ -5,31 +5,3 @@ F|大卫每天早上七点准时起床。|Dàwèi měitiān zǎoshang qī diǎn 
 F|他穿上运动服，去操场跑三公里。|Tā chuān shàng yùndòngfú, qù cāochǎng pǎo sān gōnglǐ.|He puts on sportswear and goes to the playground to run three kilometers.
 F|清晨的空气很新鲜，让他觉得很有精神。|Qīngchén de kōngqì hěn xīnxiān, ràng tā juédé hěn yǒu jīngshén.|The early morning air is very fresh, making him feel very energetic.
 F|跑步以后，他在路边的小摊买了一个热包子。|Pǎobù yǐhòu, tā zài lùbiān de xiǎotān mǎile yīgè rè bāozi.|After running, he bought a hot steamed bun at a roadside stall.
-
-[Title 2] 繁忙的汉语课 - Lớp học tiếng Trung bận rộn
-
-F|上午九点，大卫坐在教室里听老师讲课。|Shàngwǔ jiǔ diǎn, Dàwèi zuò zài jiàoshì lǐ tīng lǎoshī jiǎngkè.|At 9:00 AM, David sits in the classroom listening to the teacher's lecture.
-F|他正拿着毛笔，认真地在纸上练习写汉字。|Tā zhèng názhe máobǐ, rènzhēn de zài zhǐ shàng liànxí xiě hànzì.|He is holding a brush, seriously practicing writing Chinese characters on paper.
-F|黑板上写满了今天要做的新生词和语法。|Hēibǎn shàng xiě mǎnle jīntiān yào zuò de xīn shēngcí hé yǔfǎ.|The blackboard is filled with new vocabulary and grammar to be covered today.
-F|虽然汉语很难，但他觉得学习的过程很有趣味。|Suīrán Hànyǔ hěn nán, dànshì tā juédé xuéxí de guòchéng hěn yǒu qùwèi.|Although Chinese is difficult, he finds the learning process very interesting.
-
-[Title 3] 午餐时间与社交 - Giờ ăn trưa và giao lưu bè bạn
-
-F|中午十二点，大卫和来自不同国家的朋友去食堂。|Zhōngwǔ shí'èr diǎn, Dàwèi hé láizì bùtóng guójiā de péngyǒu qù shítáng.|At 12:00 PM, David goes to the canteen with friends from different countries.
-F|桌子上摆满了香喷喷的菜，有宫保鸡丁和炒饭。|Zhuōzi shàng bǎi mǎnle xiāngpēnpēn de cài, yǒu gōngbǎo jīdīng hé chǎofàn.|The table is covered with fragrant dishes, like Kung Pao Chicken and fried rice.
-F|他们一边吃饭，一边用汉语练习聊天。|Tāmen yībiān chīfàn, yībiān yòng Hànyǔ liànxí liáotiān.|They practice chatting in Chinese while eating.
-F|大卫已经学会了熟练地使用筷子。|Dàwèi yǐjīng xuéhuìle shúliàn de shǐyòng kuàizi.|David has already learned to use chopsticks skillfully.
-
-[Title 4] 图书馆的安静时光 - Khoảng thời gian yên tĩnh tại thư viện
-
-F|下午两点，图书馆里非常安静，只有翻书的声音。|Xiàwǔ liǎng diǎn, túshūguǎn lǐ fēicháng ānjìng, zhǐyǒu fān shū de shēngyīn.|At 2:00 PM, the library is very quiet, with only the sound of pages turning.
-F|大卫坐在窗边，戴着耳机听汉语听力材料。|Dàwèi zuò zài chuāng biān, dàizhe ěrjī tīng Hànyǔ tīnglì cáiliào.|David sits by the window, wearing headphones and listening to Chinese listening materials.
-F|阳光洒在桌子上，他正在笔记本上做记录。|Yángguāng sǎ zài zhuōzi shàng, tā zhèngzài bǐjìběn shàng zuò jìlù.|The sunlight shines on the table as he takes notes in his notebook.
-F|他准备参加下个月的HSK四级考试。|Tā zhǔnbèi cānjiā xià gè yuè de HSK sì jí kǎoshì.|He is preparing to take the HSK level 4 exam next month.
-
-[Title 5] 晚间的放松与休息 - Thư giãn và nghỉ ngơi buổi tối
-
-F|晚上八点，大卫回到宿舍，打开电脑看中文电影。|Wǎnshàng bā diǎn, Dàwèi huí dào sùshè, dǎkāi diànnǎo kàn Zhōngwén diànyǐng.|At 8:00 PM, David returns to the dorm and turns on the computer to watch a Chinese movie.
-F|这能帮助他了解中国文化，也能提高语感。|Zhè néng bāngzhù tā liǎojiě Zhōngguó wénhuà, yě néng tígāo yǔgǎn.|This helps him understand Chinese culture and also improves his sense of language.
-F|睡觉以前，他会给远方的父母发条微信报平安。|Shuìjiào yǐqián, tā huì gěi yuǎnfāng de fùmǔ fātiáo Wēixìn bào píng'ān.|Before sleeping, he sends a WeChat message to his parents far away to let them know he's okay.
-F|十一点整，他关掉灯，进入了甜美的梦乡。|Shí'yī diǎn zhěng, tā guāndiào dēng, jìnrùle tiánměi de mèngxiāng.|At 11:00 sharp, he turns off the light and enters a sweet dreamland.

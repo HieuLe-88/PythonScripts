@@ -64,6 +64,8 @@ class VideoGenerator:
         # Single-reader mode: show single full-width bottom box
         self.single_reader_var = tk.BooleanVar(value=False)
         
+        # Text box style selection (three sample styles)
+        self.textbox_style_var = tk.StringVar(value="Style1")
         # Biến cho LOGO
         self.logo_path = tk.StringVar(value="")
         self.logo_size_var = tk.StringVar(value="9") # % so với chiều rộng video
@@ -175,6 +177,13 @@ class VideoGenerator:
 
         tk.Checkbutton(design_frame, text="Hiển thị subtitle / box", variable=self.show_sub_var).grid(row=3, column=0, columnspan=4, pady=6)
 
+        # 3.1 Text box style options
+        style_frame = tk.Frame(self.root)
+        style_frame.pack(fill="x", padx=30, pady=2)
+        tk.Label(style_frame, text="Text Box Style:").pack(side="left")
+        styles = [("Clean (Style1)", "Style1"), ("Modern Dark (Style2)", "Style2"), ("Minimal (Style3)", "Style3")]
+        for txt, val in styles:
+            tk.Radiobutton(style_frame, text=txt, variable=self.textbox_style_var, value=val).pack(side="left", padx=6)
         # 4. CÀI ĐẶT LOGO
         logo_frame = tk.LabelFrame(self.root, text=" 4. CÀI ĐẶT LOGO ", font=("Arial", 10, "bold"), pady=10)
         logo_frame.pack(fill="x", padx=20, pady=5)
@@ -437,8 +446,44 @@ class VideoGenerator:
                     y_r, x_r = (6.5, 4) if data['position_type'] == "LEFT" else (6.5, 12)
 
                 cx, cy = int(width * (x_r / 16)), int(height * (y_r / 9))
-            draw.rounded_rectangle([cx - b_w//2, cy - b_h//2, cx + b_w//2, cy + b_h//2], 
-                                    radius=15, fill=(255, 240, 235), outline=(0, 0, 0), width=1)
+            # Text box style rendering (3 sample styles)
+            style = getattr(self, 'textbox_style_var', None) and self.textbox_style_var.get() or "Style1"
+            box_radius = 15
+            box_outline = (0, 0, 0)
+            box_fill = (255, 240, 235)
+            if style == "Style1":
+                # Speech-bubble look: outer pale-blue rounded rect + inner white rounded rect
+                box_radius = 18
+                outer_fill = (217, 230, 242)
+                outer_outline = (120, 120, 125)
+                inner_fill = (255, 255, 255)
+                inner_outline = (210, 210, 210)
+                inset = 8
+                # outer
+                draw.rounded_rectangle([cx - b_w//2, cy - b_h//2, cx + b_w//2, cy + b_h//2], 
+                                        radius=box_radius, fill=outer_fill, outline=outer_outline, width=1)
+                # inner (white) inset
+                draw.rounded_rectangle([cx - b_w//2 + inset, cy - b_h//2 + inset, cx + b_w//2 - inset, cy + b_h//2 - inset], 
+                                        radius=max(6, box_radius-6), fill=inner_fill, outline=inner_outline, width=1)
+            elif style == "Style2":
+                # Modern light: soft shadow + light rounded box + subtle outline
+                box_radius = 20
+                shadow_color = (210, 210, 210)
+                # draw shadow slightly offset (soft, light)
+                draw.rounded_rectangle([cx - b_w//2 + 6, cy - b_h//2 + 6, cx + b_w//2 + 6, cy + b_h//2 + 6], 
+                                        radius=box_radius+3, fill=shadow_color)
+                box_fill = (245, 248, 250)
+                box_outline = (200, 200, 200)
+            elif style == "Style3":
+                # Minimal: pale background with subtle border
+                box_radius = 12
+                box_fill = (250, 250, 250)
+                box_outline = (200, 200, 200)
+
+            # For Style1 we already drew outer+inner; for others, draw the single rectangle
+            if style != "Style1":
+                draw.rounded_rectangle([cx - b_w//2, cy - b_h//2, cx + b_w//2, cy + b_h//2], 
+                                        radius=box_radius, fill=box_fill, outline=box_outline, width=1)
 
         # Chèn LOGO
         if self.logo_path.get() and os.path.exists(self.logo_path.get()):
@@ -467,12 +512,40 @@ class VideoGenerator:
                 except: continue
             return ImageFont.load_default()
 
-        # Font Hanzi/Main (Tiếng Trung hoặc Tây Ban Nha)
-        f_main = get_font("msyh.ttc", 23) # Tăng nhẹ size
-        # Font Pinyin: Đã tăng từ 11 lên 15
-        f_pinyin = get_font("arial.ttf", 15) 
-        # Font English/Sub: Chuyển sang Arial
-        f_eng = get_font("arial.ttf", 16) 
+        # Determine text colors and font sizes based on selected style
+        style = getattr(self, 'textbox_style_var', None) and self.textbox_style_var.get() or "Style1"
+        # Base font sizes
+        base_main_size = 23
+        base_pinyin_size = 15
+        base_eng_size = 16
+        # If Style2 selected, increase Hanzi size by 20%
+        if style == "Style2":
+            main_size = int(base_main_size * 1.2)
+        else:
+            main_size = base_main_size
+
+        # Create fonts with computed sizes
+        f_main = get_font("msyh.ttc", main_size)
+        f_pinyin = get_font("arial.ttf", base_pinyin_size)
+        f_eng = get_font("arial.ttf", base_eng_size)
+
+        # Colors per style
+        if style == "Style1":
+            main_color = "black"
+            pinyin_color = "#555555"
+            eng_color = "black"
+        elif style == "Style2":
+            main_color = (48, 36, 28)  # brown-black mix
+            pinyin_color = "#666666"
+            eng_color = "#222222"
+        elif style == "Style3":
+            main_color = (0, 100, 0)
+            pinyin_color = "#666666"
+            eng_color = "black"
+        else:
+            main_color = (0, 100, 0)
+            pinyin_color = "#555555"
+            eng_color = "black"
 
         def wrap(t, f, max_w):
             if not t: return ""
@@ -494,15 +567,21 @@ class VideoGenerator:
                 txt_pinyin = wrap(data['text_2'], f_pinyin, b_w - padding)
                 txt_hanzi = wrap(data['text_1'], f_main, b_w - padding)
                 txt_eng = wrap(data['text_3'], f_eng, b_w - padding)
-                # Điều chỉnh vị trí Y để các chữ không đè nhau khi Pinyin to hơn
-                draw.text((cx, cy - 45), txt_pinyin, fill="#555555", font=f_pinyin, anchor="mm", align="center")
-                draw.text((cx, cy - 5), txt_hanzi, fill=(0, 100, 0), font=f_main, anchor="mm", align="center")
-                draw.text((cx, cy + 45), txt_eng, fill="black", font=f_eng, anchor="mm", align="center")
+                # Style-specific vertical offsets so layout matches sample bubble
+                if style == "Style1":
+                    pinyin_off, main_off, eng_off = -36, -6, 40
+                elif style == "Style2":
+                    pinyin_off, main_off, eng_off = -45, -5, 45
+                else:
+                    pinyin_off, main_off, eng_off = -45, -5, 45
+                draw.text((cx, cy + pinyin_off), txt_pinyin, fill=pinyin_color, font=f_pinyin, anchor="mm", align="center")
+                draw.text((cx, cy + main_off), txt_hanzi, fill=main_color, font=f_main, anchor="mm", align="center")
+                draw.text((cx, cy + eng_off), txt_eng, fill=eng_color, font=f_eng, anchor="mm", align="center")
             else:
                 txt_main = wrap(data['text_1'], f_main, b_w - padding)
                 txt_en = wrap(data['text_2'], f_eng, b_w - padding)
-                draw.text((cx, cy - 15), txt_main, fill=(0, 100, 0), font=f_main, anchor="mm", align="center")
-                draw.text((cx, cy + 25), txt_en, fill="black", font=f_eng, anchor="mm", align="center")
+                draw.text((cx, cy - 15), txt_main, fill=main_color, font=f_main, anchor="mm", align="center")
+                draw.text((cx, cy + 25), txt_en, fill=eng_color, font=f_eng, anchor="mm", align="center")
 
         return np.array(img)
 
