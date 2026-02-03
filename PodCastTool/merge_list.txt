@@ -1,0 +1,8 @@
+
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_output_Chinese_20260202_020131.mp4'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_1_ChineseCornerStart2.mp4'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_intro.mp4'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_output_Chinese_20260202_020131.mp4'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_output_Chinese_20260202_025945.mp4'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_y_mid.mp4'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_z_ChineseCornerEnd.mp4'

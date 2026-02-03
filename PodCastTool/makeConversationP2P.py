@@ -73,6 +73,8 @@ class VideoGenerator:
         # Support multiple title-specific images: mapping titlekey -> filepath
         self.bg_images = {}
         self.bg_images_var = tk.StringVar(value="")
+        # Toggle display of subtitle/text box
+        self.show_sub_var = tk.BooleanVar(value=True)
         self.output_dir = tk.StringVar(value=os.getcwd())
         self.selected_speed = tk.StringVar(value="100%")
         # Engine selection: Edge TTS (legacy) or Gemini (use external audio + SRT)
@@ -170,6 +172,8 @@ class VideoGenerator:
         self.single_reader_var.trace("w", lambda *args: self.update_single_reader_ui())
         # Initialize state
         self.update_single_reader_ui()
+
+        tk.Checkbutton(design_frame, text="Hiển thị subtitle / box", variable=self.show_sub_var).grid(row=3, column=0, columnspan=4, pady=6)
 
         # 4. CÀI ĐẶT LOGO
         logo_frame = tk.LabelFrame(self.root, text=" 4. CÀI ĐẶT LOGO ", font=("Arial", 10, "bold"), pady=10)
@@ -407,30 +411,34 @@ class VideoGenerator:
         # Treat as Chinese (show pinyin) when language is Chinese or when the data contains pinyin text
         is_chinese = (self.lang_var.get() == "Chinese") or bool(data.get('text_2'))
 
-        # Vẽ Box văn bản
-        try:
-            b_w = int(self.box_width_var.get())
-            b_h = int(self.box_height_var.get())
-        except:
-            b_w, b_h = 400, 180
+        # Decide whether to draw subtitle/text box
+        show_sub = getattr(self, 'show_sub_var', None) and self.show_sub_var.get()
 
-        # If single-reader mode is enabled, ignore position/width GUI settings
-        if getattr(self, 'single_reader_var', None) and self.single_reader_var.get():
-            margin = 20
-            b_w = width - margin * 2
-            b_h = 120
-            cx = width // 2
-            cy = height - b_h // 2 - margin
-        else:
-            pos_str = self.pos_left_var.get() if data['position_type'] == "LEFT" else self.pos_right_var.get()
+        if show_sub:
+            # Vẽ Box văn bản
             try:
-                y_r, x_r = map(float, pos_str.split(','))
+                b_w = int(self.box_width_var.get())
+                b_h = int(self.box_height_var.get())
             except:
-                y_r, x_r = (6.5, 4) if data['position_type'] == "LEFT" else (6.5, 12)
+                b_w, b_h = 400, 180
 
-            cx, cy = int(width * (x_r / 16)), int(height * (y_r / 9))
-        draw.rounded_rectangle([cx - b_w//2, cy - b_h//2, cx + b_w//2, cy + b_h//2], 
-                                radius=15, fill=(255, 240, 235), outline=(0, 0, 0), width=1)
+            # If single-reader mode is enabled, ignore position/width GUI settings
+            if getattr(self, 'single_reader_var', None) and self.single_reader_var.get():
+                margin = 20
+                b_w = width - margin * 2
+                b_h = 120
+                cx = width // 2
+                cy = height - b_h // 2 - margin
+            else:
+                pos_str = self.pos_left_var.get() if data['position_type'] == "LEFT" else self.pos_right_var.get()
+                try:
+                    y_r, x_r = map(float, pos_str.split(','))
+                except:
+                    y_r, x_r = (6.5, 4) if data['position_type'] == "LEFT" else (6.5, 12)
+
+                cx, cy = int(width * (x_r / 16)), int(height * (y_r / 9))
+            draw.rounded_rectangle([cx - b_w//2, cy - b_h//2, cx + b_w//2, cy + b_h//2], 
+                                    radius=15, fill=(255, 240, 235), outline=(0, 0, 0), width=1)
 
         # Chèn LOGO
         if self.logo_path.get() and os.path.exists(self.logo_path.get()):
@@ -481,20 +489,20 @@ class VideoGenerator:
             return '\n'.join(lines)
 
         padding = 40
-        if is_chinese:
-            txt_pinyin = wrap(data['text_2'], f_pinyin, b_w - padding)
-            txt_hanzi = wrap(data['text_1'], f_main, b_w - padding)
-            txt_eng = wrap(data['text_3'], f_eng, b_w - padding)
-            
-            # Điều chỉnh vị trí Y để các chữ không đè nhau khi Pinyin to hơn
-            draw.text((cx, cy - 45), txt_pinyin, fill="#555555", font=f_pinyin, anchor="mm", align="center")
-            draw.text((cx, cy - 5), txt_hanzi, fill=(0, 100, 0), font=f_main, anchor="mm", align="center")
-            draw.text((cx, cy + 45), txt_eng, fill="black", font=f_eng, anchor="mm", align="center")
-        else:
-            txt_main = wrap(data['text_1'], f_main, b_w - padding)
-            txt_en = wrap(data['text_2'], f_eng, b_w - padding)
-            draw.text((cx, cy - 15), txt_main, fill=(0, 100, 0), font=f_main, anchor="mm", align="center")
-            draw.text((cx, cy + 25), txt_en, fill="black", font=f_eng, anchor="mm", align="center")
+        if getattr(self, 'show_sub_var', None) and self.show_sub_var.get():
+            if is_chinese:
+                txt_pinyin = wrap(data['text_2'], f_pinyin, b_w - padding)
+                txt_hanzi = wrap(data['text_1'], f_main, b_w - padding)
+                txt_eng = wrap(data['text_3'], f_eng, b_w - padding)
+                # Điều chỉnh vị trí Y để các chữ không đè nhau khi Pinyin to hơn
+                draw.text((cx, cy - 45), txt_pinyin, fill="#555555", font=f_pinyin, anchor="mm", align="center")
+                draw.text((cx, cy - 5), txt_hanzi, fill=(0, 100, 0), font=f_main, anchor="mm", align="center")
+                draw.text((cx, cy + 45), txt_eng, fill="black", font=f_eng, anchor="mm", align="center")
+            else:
+                txt_main = wrap(data['text_1'], f_main, b_w - padding)
+                txt_en = wrap(data['text_2'], f_eng, b_w - padding)
+                draw.text((cx, cy - 15), txt_main, fill=(0, 100, 0), font=f_main, anchor="mm", align="center")
+                draw.text((cx, cy + 25), txt_en, fill="black", font=f_eng, anchor="mm", align="center")
 
         return np.array(img)
 
