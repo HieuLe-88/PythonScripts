@@ -171,40 +171,77 @@ class VideoGenerator:
         es_box = [margin_x + 20, 100, width - margin_x - 20, 100 + inner_box_height]
         en_box = [margin_x + 20, 380, width - margin_x - 20, 380 + inner_box_height]
 
-        # If pinyin_text is provided, treat as Chinese layout
+        # If pinyin_text is provided, draw Chinese-style cards like the sample image
         if pinyin_text is not None:
-            # top box: white with pale blue accent
-            draw.rounded_rectangle(es_box, radius=25, fill=(255, 255, 255), outline=(200, 200, 200), width=2)
-            # bottom box: light gray
-            draw.rounded_rectangle(en_box, radius=25, fill=(245, 248, 250), outline=(200, 200, 200), width=2)
+            # Outer rounded frame (teal border)
+            outer_pad = 8
+            outer_x1 = es_box[0] - outer_pad
+            outer_y1 = es_box[1] - outer_pad
+            outer_x2 = en_box[2] + outer_pad
+            outer_y2 = en_box[3] + outer_pad
+            outer_radius = 26
+            frame_color = (6, 95, 85)  # dark teal
+            draw.rounded_rectangle([outer_x1, outer_y1, outer_x2, outer_y2], radius=outer_radius, fill=(252,250,248), outline=frame_color, width=6)
 
-            # Fonts: Hanzi large, pinyin small, english medium
-            hanzi_size = 72
-            pinyin_size = 28
-            eng_size = 48
+            # Inner top panel (pale teal)
+            top_x1 = outer_x1 + 12
+            top_y1 = outer_y1 + 12
+            top_x2 = outer_x2 - 12
+            top_y2 = top_y1 + int((outer_y2 - outer_y1) * 0.48)
+            draw.rounded_rectangle([top_x1, top_y1, top_x2, top_y2], radius=18, fill=(201,234,231), outline=(190,220,215), width=1)
+
+            # Inner bottom panel (white) with dashed border
+            bot_x1 = top_x1
+            bot_y1 = top_y2 + 12
+            bot_x2 = top_x2
+            bot_y2 = outer_y2 - 12
+            draw.rounded_rectangle([bot_x1, bot_y1, bot_x2, bot_y2], radius=16, fill=(255,255,255), outline=(220,220,220), width=1)
+            # dashed border effect
+            dash_w = 10
+            gap_w = 8
+            x = bot_x1 + 12
+            while x < bot_x2 - 12:
+                x2 = min(x + dash_w, bot_x2 - 12)
+                draw.line([(x, bot_y1+8), (x2, bot_y1+8)], fill=(180,180,180), width=2)
+                draw.line([(x, bot_y2-8), (x2, bot_y2-8)], fill=(180,180,180), width=2)
+                x += dash_w + gap_w
+
+            # Fonts: try to use italic for pinyin and english, hanzi in bold-like
+            top_height = top_y2 - top_y1
+            bot_height = bot_y2 - bot_y1
+            hanzi_size = 55# max(12, int(top_height * 0.5))
+            pinyin_size = 22#  max(10, int(top_height * 0.18))
+            eng_size = 35# max(12, int(bot_height * 0.35))
             try:
                 hanzi_font = ImageFont.truetype("msyh.ttc", hanzi_size)
-                pinyin_font = ImageFont.truetype("arial.ttf", pinyin_size)
-                eng_font = ImageFont.truetype("arial.ttf", eng_size)
+                pinyin_font = ImageFont.truetype("ariali.ttf", pinyin_size)
+                eng_font = ImageFont.truetype("ariali.ttf", eng_size)
             except:
-                hanzi_font = ImageFont.load_default()
-                pinyin_font = ImageFont.load_default()
-                eng_font = ImageFont.load_default()
+                hanzi_font = ImageFont.truetype("msyh.ttc", hanzi_size) if os.path.exists("C:\\Windows\\Fonts\\msyh.ttc") else ImageFont.load_default()
+                try:
+                    pinyin_font = ImageFont.truetype("ariali.ttf", pinyin_size)
+                    eng_font = ImageFont.truetype("ariali.ttf", eng_size)
+                except:
+                    pinyin_font = ImageFont.load_default()
+                    eng_font = ImageFont.load_default()
 
-            # Wrap hanzi (rarely wraps) and pinyin/english
-            wrapped_hanzi = self.wrap_text(main_text, hanzi_font, inner_box_width)
-            wrapped_pinyin = self.wrap_text(pinyin_text, pinyin_font, inner_box_width)
-            wrapped_eng = self.wrap_text(trans_text, eng_font, inner_box_width)
+            # Wrap texts to fit within inner top/bottom areas
+            text_max_w = (top_x2 - top_x1) - 48
+            wrapped_pinyin = self.wrap_text(pinyin_text, pinyin_font, text_max_w)
+            wrapped_hanzi = self.wrap_text(main_text, hanzi_font, text_max_w)
+            wrapped_eng = self.wrap_text(trans_text, eng_font, (bot_x2 - bot_x1) - 40)
 
-            # Positions
-            es_center = (es_box[0] + (es_box[2] - es_box[0]) // 2, es_box[1] + inner_box_height // 2 - 20)
-            # Draw Hanzi (upper), pinyin slightly above Hanzi
-            draw.text((es_center[0], es_center[1] - 20), wrapped_hanzi, fill=(0, 0, 0), font=hanzi_font, anchor="mm", align="center")
-            draw.text((es_center[0], es_center[1] + 48), wrapped_pinyin, fill=(100, 100, 100), font=pinyin_font, anchor="mm", align="center")
+            # Positions: pinyin above hanzi, centered in top panel
+            cx = (top_x1 + top_x2) // 2
+            pinyin_y = top_y1 + int(top_height * 0.12)
+            hanzi_y = pinyin_y + int(pinyin_size * 1.6) + 6
+            draw.text((cx, pinyin_y), wrapped_pinyin, fill=(6,95,85), font=pinyin_font, anchor="ma", align="center")
+            draw.text((cx, hanzi_y), wrapped_hanzi, fill=(5,70,65), font=hanzi_font, anchor="ma", align="center")
 
-            # English in bottom box
-            en_center = (en_box[0] + (en_box[2] - en_box[0]) // 2, en_box[1] + inner_box_height // 2)
-            draw.text(en_center, wrapped_eng, fill="black", font=eng_font, anchor="mm", align="center")
+            # English centered in bottom panel, italic grey
+            eng_cx = (bot_x1 + bot_x2) // 2
+            eng_cy = bot_y1 + bot_height // 2
+            draw.text((eng_cx, eng_cy), wrapped_eng, fill=(120,120,120), font=eng_font, anchor="mm", align="center")
 
         else:
             # Default Spanish layout (original behavior)
@@ -347,10 +384,12 @@ class VideoGenerator:
             final_result.write_videofile(final_path, codec="libx264", audio_codec="aac", fps=fps)
             
             for i in range(len(lines)):
-                for f in [f"es_temp_{i}.mp3", f"en_temp_{i}.mp3", f"video_temp_{i}.avi"]:
+                for f in [f"es_temp_{i}.mp3", f"en_temp_{i}.mp3", f"cn_temp_{i}.mp3", f"video_temp_{i}.avi"]:
                     if os.path.exists(f):
-                        try: os.remove(f)
-                        except: pass
+                        try:
+                            os.remove(f)
+                        except Exception:
+                            pass
             
             messagebox.showinfo("Success", f"Video saved to:\n{final_path}")
 

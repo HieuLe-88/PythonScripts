@@ -1,2 +1,75 @@
-你好，今天我们聊聊暑假的旅行计划吧。|Nǐ hǎo, jīntiān wǒmen liáo liáo shǔjià de lǚxíng jìhuà ba.|Hi, let's talk about summer travel plans today. 
-好的，你打算先去哪里？|Hǎo de, nǐ dǎsuàn xiān qù nǎlǐ?|Sure, where do you plan to go first?
+
+去。|Qù.|Go.
+我想去商店买东西。|Wǒ xiǎng qù shāngdiàn mǎi dōngxī.|I want to go to the store to buy things.
+
+看。|Kàn.|Look / Watch.
+我们在家看电影吧。|Wǒmen zài jiā kàn diànyǐng ba.|Let’s watch a movie at home.
+
+吃。|Chī.|Eat.
+你喜欢吃中国菜吗？|Nǐ xǐhuān chī Zhōngguó cài ma?|Do you like eating Chinese food?
+
+喝。|Hē.|Drink.
+我想喝一杯热茶。|Wǒ xiǎng hē yī bēi rè chá.|I want to drink a cup of hot tea.
+
+说。|Shuō.|Speak / Say.
+请你慢一点儿说。|Qǐng nǐ màn yīdiǎnr shuō.|Please speak a little slower.
+
+听。|Tīng.|Listen.
+你听，谁在唱歌？|Nǐ tīng, shéi zài chànggē?|Listen, who is singing?
+
+读。|Dú.|Read.
+我会读这个汉字。|Wǒ huì dú zhège hànzì.|I can read this Chinese character.
+
+写。|Xiě.|Write.
+他在写昨天的作业。|Tā zài xiě zuótiān de zuòyè.|He is writing yesterday's homework.
+
+做。|Zuò.|Do / Make.
+你在做什么呢？|Nǐ zài zuò shénme ne?|What are you doing?
+
+坐。|Zuò.|Sit / Travel by.
+我们坐出租车去学校。|Wǒmen zuò chūzūchē qù xuéxiào.|We go to school by taxi.
+
+买。|Mǎi.|Buy.
+我想买一件新衣服。|Wǒ xiǎng mǎi yī jiàn xīn yīfú.|I want to buy a new piece of clothing.
+
+开。|Kāi.|Open / Drive.
+你会开车去公司吗？|Nǐ huì kāichē qù gōngsī ma?|Can you drive to the office?
+
+叫。|Jiào.|Call / Be named.
+我的小猫叫大米。|Wǒ de xiǎomāo jiào Dàmǐ.|My kitten is named Rice.
+
+认识。|Rènshí.|Recognize / Meet.
+认识你我很高兴。|Rènshí nǐ wǒ hěn gāoxìng.|I am glad to meet you.
+
+学习。|Xuéxí.|Study / Learn.
+弟弟在房间学习。|Dìdì zài fángjiān xuéxí.|Younger brother is studying in the room.
+
+睡觉。|Shuìjiào.|Sleep.
+太晚了，去睡觉吧。|Tài wǎn le, qù shuìjiào ba.|It's too late, go to sleep.
+
+工作。|Gōngzuò.|Work.
+爸爸在医院工作。|Bàba zài yīyuàn gōngzuò.|Dad works at the hospital.
+
+游泳。|Yóuyǒng.|Swim.
+夏天我们去游泳吧。|Xiàtiān wǒmen qù yóuyǒng ba.|Let's go swimming in the summer.
+
+跳舞。|Tiàowǔ.|Dance.
+她跳舞跳得非常好。|Tā tiàowǔ tiào dé fēicháng hǎo.|She dances very well.
+
+唱歌。|Chànggē.|Sing.
+你会唱中国歌吗？|Nǐ huì chàng Zhōngguó gē ma?|Can you sing Chinese songs?
+
+跑步。|Pǎobù.|Run / Jog.
+我每天早上跑步。|Wǒ měitiān zǎoshang pǎobù.|I go running every morning.
+
+打。|Dǎ.|Play / Hit.
+哥哥喜欢打篮球。|Gēgē xǐhuān dǎ lánqiú.|Older brother likes playing basketball.
+
+旅游。|Lǚyóu.|Travel.
+明年我想去旅游。|Míngnián wǒ xiǎng qù lǚyóu.|I want to travel next year.
+
+生病。|Shēngbìng.|Be ill.
+他生病了，没上学。|Tā shēngbìng le, méi shàngxué.|He is sick and didn't go to school.
+
+准备。|Zhǔnbèi.|Prepare.
+我在准备下周考试。|Wǒ zài zhǔnbèi xià zhōu kǎoshì.|I am preparing for next week's exam.
