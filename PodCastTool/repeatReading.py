@@ -20,9 +20,21 @@ class VideoGenerator:
         self.logo_path = tk.StringVar(value="")
         self.selected_voice = tk.StringVar(value="es-ES-AlvaroNeural (Male)")
         self.selected_speed = tk.StringVar(value="100%")
+        self.lang_var = tk.StringVar(value="Spanish")
+        # For Chinese mode: repeat counts (user-controlled)
+        self.main_repeat = tk.IntVar(value=2)
+        self.trans_repeat = tk.IntVar(value=1)
+        # Chinese voice selection (basic)
+        self.chinese_voice = tk.StringVar(value="zh-CN-XiaoxiaoNeural")
 
         # UI
         tk.Label(root, text="Pattern: ES -> 1.3s Gap -> EN -> ES -> ES", font=("Arial", 10, "italic")).pack(pady=10)
+
+        # Language selector (Spanish or Chinese)
+        lang_frame = tk.Frame(root)
+        lang_frame.pack(pady=4)
+        tk.Label(lang_frame, text="Language:").pack(side=tk.LEFT)
+        ttk.Combobox(lang_frame, textvariable=self.lang_var, values=["Spanish", "Chinese"], width=12, state="readonly").pack(side=tk.LEFT, padx=6)
 
         # 1. Voice Selection
         tk.Label(root, text="Select Spanish Voice:").pack()
@@ -40,6 +52,16 @@ class VideoGenerator:
         speeds = ["60%", "70%", "80%", "90%", "100%"]
         self.speed_combo = ttk.Combobox(root, textvariable=self.selected_speed, values=speeds, width=15, state="readonly")
         self.speed_combo.pack(pady=5)
+
+        # Chinese-specific repeat controls and voice (visible for Chinese use)
+        chi_frame = tk.Frame(root)
+        chi_frame.pack(pady=4)
+        tk.Label(chi_frame, text="Chinese main repeats:").pack(side=tk.LEFT)
+        tk.Spinbox(chi_frame, from_=1, to=10, textvariable=self.main_repeat, width=4).pack(side=tk.LEFT, padx=4)
+        tk.Label(chi_frame, text="Trans repeats:").pack(side=tk.LEFT, padx=(8,0))
+        tk.Spinbox(chi_frame, from_=0, to=10, textvariable=self.trans_repeat, width=4).pack(side=tk.LEFT, padx=4)
+        tk.Label(chi_frame, text="CN Voice:").pack(side=tk.LEFT, padx=(8,0))
+        ttk.Combobox(chi_frame, textvariable=self.chinese_voice, values=["zh-CN-XiaoxiaoNeural","zh-CN-XiaoyiNeural","zh-CN-YunxiNeural"], width=22, state="readonly").pack(side=tk.LEFT, padx=4)
 
         # 3. Logo Selection
         tk.Label(root, text="Watermark Logo (Optional):").pack(pady=(10, 0))
@@ -75,6 +97,7 @@ class VideoGenerator:
             self.logo_path.set(file)
 
     def parse_line(self, line):
+        # Keep existing Spanish format parser
         pattern = r"(.+?)\s*\((\d+)\)\.\|(.+?)\s*\((\d+)\)\."
         match = re.search(pattern, line)
         if match:
@@ -86,6 +109,17 @@ class VideoGenerator:
             }
         return None
 
+    def parse_line_chinese(self, line):
+        # Expect: Hanzi.|Pinyin.|English.  separated by '|'
+        parts = [p.strip() for p in line.split('|') if p.strip()]
+        if len(parts) >= 3:
+            # remove trailing dots if present
+            hanzi = parts[0].rstrip('.')
+            pinyin = parts[1].rstrip('.')
+            english = parts[2].rstrip('.')
+            return {"hanzi": hanzi, "pinyin": pinyin, "english": english}
+        return None
+
     def make_silence(self, duration):
         return AudioClip(lambda t: [0, 0], duration=max(0.1, duration), fps=15)
 
@@ -93,6 +127,7 @@ class VideoGenerator:
         speed_val = int(speed_str.replace("%", ""))
         rate_val = speed_val - 100
         rate_str = f"{rate_val:+d}%" 
+        # voice_str may be a display like 'es-ES-AlvaroNeural (Male)' or a raw voice id
         voice = voice_str.split(" ")[0]
         communicate = edge_tts.Communicate(text, voice, rate=rate_str)
         await communicate.save(filename)
@@ -115,7 +150,7 @@ class VideoGenerator:
         lines.append(' '.join(current_line))
         return '\n'.join(lines)
 
-    def create_frame(self, es_text, en_text, width=1280, height=720):
+    def create_frame(self, main_text, trans_text, pinyin_text=None, width=1280, height=720):
         # 1. Main Background: Seashell White (RGB: 255, 245, 240)
         img = Image.new('RGB', (width, height), color=(255, 245, 240))
         draw = ImageDraw.Draw(img)
@@ -132,33 +167,69 @@ class VideoGenerator:
         container_box = [margin_x - 20, 60, width - margin_x + 20, 660]
         draw.rounded_rectangle(container_box, radius=35, fill="white", outline=(200, 200, 200), width=2)
 
-        # 4. Spanish Box (Rose White: 255, 240, 235)
+        # Boxes: colors differ by language; when Chinese mode, the top box will show Hanzi + Pinyin
         es_box = [margin_x + 20, 100, width - margin_x - 20, 100 + inner_box_height]
-        draw.rounded_rectangle(es_box, radius=25, fill=(255, 240, 235), outline=(0, 128, 0), width=4)
-
-        # 5. English Box (Periwinkle Blue: 178, 191, 255)
         en_box = [margin_x + 20, 380, width - margin_x - 20, 380 + inner_box_height]
-        draw.rounded_rectangle(en_box, radius=25, fill=(178, 191, 255), outline=(50, 50, 50), width=2)
 
-        # 6. Fonts and Text Wrapping
-        en_size = 48
-        es_size = int(en_size * 1.5)
-        try:
-            es_font = ImageFont.truetype("arial.ttf", es_size)
-            en_font = ImageFont.truetype("arial.ttf", en_size)
-        except:
-            es_font = ImageFont.load_default()
-            en_font = ImageFont.load_default()
+        # If pinyin_text is provided, treat as Chinese layout
+        if pinyin_text is not None:
+            # top box: white with pale blue accent
+            draw.rounded_rectangle(es_box, radius=25, fill=(255, 255, 255), outline=(200, 200, 200), width=2)
+            # bottom box: light gray
+            draw.rounded_rectangle(en_box, radius=25, fill=(245, 248, 250), outline=(200, 200, 200), width=2)
 
-        wrapped_es = self.wrap_text(es_text, es_font, (width - margin_x * 2) - 100)
-        wrapped_en = self.wrap_text(en_text, en_font, (width - margin_x * 2) - 100)
+            # Fonts: Hanzi large, pinyin small, english medium
+            hanzi_size = 72
+            pinyin_size = 28
+            eng_size = 48
+            try:
+                hanzi_font = ImageFont.truetype("msyh.ttc", hanzi_size)
+                pinyin_font = ImageFont.truetype("arial.ttf", pinyin_size)
+                eng_font = ImageFont.truetype("arial.ttf", eng_size)
+            except:
+                hanzi_font = ImageFont.load_default()
+                pinyin_font = ImageFont.load_default()
+                eng_font = ImageFont.load_default()
 
-        # 7. Center Text
-        es_pos = (es_box[0] + (es_box[2] - es_box[0]) // 2, es_box[1] + inner_box_height // 2)
-        en_pos = (en_box[0] + (en_box[2] - en_box[0]) // 2, en_box[1] + inner_box_height // 2)
+            # Wrap hanzi (rarely wraps) and pinyin/english
+            wrapped_hanzi = self.wrap_text(main_text, hanzi_font, inner_box_width)
+            wrapped_pinyin = self.wrap_text(pinyin_text, pinyin_font, inner_box_width)
+            wrapped_eng = self.wrap_text(trans_text, eng_font, inner_box_width)
 
-        draw.text(es_pos, wrapped_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
-        draw.text(en_pos, wrapped_en, fill="black", font=en_font, anchor="mm", align="center")
+            # Positions
+            es_center = (es_box[0] + (es_box[2] - es_box[0]) // 2, es_box[1] + inner_box_height // 2 - 20)
+            # Draw Hanzi (upper), pinyin slightly above Hanzi
+            draw.text((es_center[0], es_center[1] - 20), wrapped_hanzi, fill=(0, 0, 0), font=hanzi_font, anchor="mm", align="center")
+            draw.text((es_center[0], es_center[1] + 48), wrapped_pinyin, fill=(100, 100, 100), font=pinyin_font, anchor="mm", align="center")
+
+            # English in bottom box
+            en_center = (en_box[0] + (en_box[2] - en_box[0]) // 2, en_box[1] + inner_box_height // 2)
+            draw.text(en_center, wrapped_eng, fill="black", font=eng_font, anchor="mm", align="center")
+
+        else:
+            # Default Spanish layout (original behavior)
+            draw.rounded_rectangle(es_box, radius=25, fill=(255, 240, 235), outline=(0, 128, 0), width=4)
+            draw.rounded_rectangle(en_box, radius=25, fill=(178, 191, 255), outline=(50, 50, 50), width=2)
+
+            # 6. Fonts and Text Wrapping
+            en_size = 48
+            es_size = int(en_size * 1.5)
+            try:
+                es_font = ImageFont.truetype("arial.ttf", es_size)
+                en_font = ImageFont.truetype("arial.ttf", en_size)
+            except:
+                es_font = ImageFont.load_default()
+                en_font = ImageFont.load_default()
+
+            wrapped_es = self.wrap_text(main_text, es_font, inner_box_width)
+            wrapped_en = self.wrap_text(trans_text, en_font, inner_box_width)
+
+            # 7. Center Text
+            es_pos = (es_box[0] + (es_box[2] - es_box[0]) // 2, es_box[1] + inner_box_height // 2)
+            en_pos = (en_box[0] + (en_box[2] - en_box[0]) // 2, en_box[1] + inner_box_height // 2)
+
+            draw.text(es_pos, wrapped_es, fill=(0, 100, 0), font=es_font, anchor="mm", align="center")
+            draw.text(en_pos, wrapped_en, fill="black", font=en_font, anchor="mm", align="center")
 
         # 8. Logo Logic
         if self.logo_path.get() and os.path.exists(self.logo_path.get()):
@@ -183,49 +254,93 @@ class VideoGenerator:
         final_path = os.path.join(out_folder, "pattern_lesson_wrapped.mp4")
 
         for i, line in enumerate(lines):
-            data = self.parse_line(line)
-            if not data: continue
+            # Branch on language selection
+            if self.lang_var.get() == "Chinese":
+                data = self.parse_line_chinese(line)
+                if not data:
+                    continue
 
-            # --- AUDIO CLEANING STEP ---
-            # We remove punctuation ONLY for the audio generation so it's not read aloud
-            # This regex replaces ?, /, ., (, ), and other symbols with an empty space
-            clean_es_audio = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
-            clean_en_audio = re.sub(r'[?/.()¿¡!]', '', data['en_text'])
+                # Clean punctuation for TTS generation
+                clean_hanzi = re.sub(r'[?/.()¿¡!]', '', data['hanzi'])
+                clean_eng = re.sub(r'[?/.()¿¡!]', '', data['english'])
 
-            es_temp = f"es_temp_{i}.mp3"
-            en_temp = f"en_temp_{i}.mp3"
-            
-            # Use the 'clean' versions for audio generation
-            asyncio.run(self.generate_audio(clean_es_audio, self.selected_voice.get(), self.selected_speed.get(), es_temp))
-            asyncio.run(self.generate_audio(clean_en_audio, "en-US-GuyNeural", self.selected_speed.get(), en_temp))
+                cn_temp = f"cn_temp_{i}.mp3"
+                en_temp = f"en_temp_{i}.mp3"
 
-            es_audio = AudioFileClip(es_temp)
-            en_audio = AudioFileClip(en_temp)
+                # Generate Chinese and English audio
+                asyncio.run(self.generate_audio(clean_hanzi, self.chinese_voice.get(), self.selected_speed.get(), cn_temp))
+                asyncio.run(self.generate_audio(clean_eng, "en-US-GuyNeural", self.selected_speed.get(), en_temp))
 
-            line_audio_list = [es_audio, self.make_silence(0.5), self.make_silence(1.3)]
-            
-            for _ in range(data['en_count']):
-                line_audio_list.extend([en_audio, self.make_silence(0.5)])
+                cn_audio = AudioFileClip(cn_temp)
+                en_audio = AudioFileClip(en_temp)
+
+                # Pattern: CN -> 0.5s -> 1.3s gap -> EN -> repeat EN trans_repeat times -> repeat CN main_repeat times
+                line_audio_list = [cn_audio, self.make_silence(0.5), self.make_silence(1.3)]
+                for _ in range(self.trans_repeat.get()):
+                    line_audio_list.extend([en_audio, self.make_silence(0.5)])
+                if self.main_repeat.get() > 1:
+                    for _ in range(self.main_repeat.get() - 1):
+                        line_audio_list.extend([cn_audio, self.make_silence(0.5)])
+
+                final_audio = concatenate_audioclips(line_audio_list)
+                temp_avi = f"video_temp_{i}.avi"
+                fourcc = cv2.VideoWriter_fourcc(*'XVID')
+                out = cv2.VideoWriter(temp_avi, fourcc, fps, (1280, 720))
+
+                # Visual: pass hanzi (main), english (trans), and pinyin
+                frame = self.create_frame(data['hanzi'], data['english'], pinyin_text=data['pinyin'])
+                for _ in range(int(final_audio.duration * fps) + 1):
+                    out.write(frame)
+                out.release()
+
+                segment = VideoFileClip(temp_avi).set_audio(final_audio)
+                all_video_segments.append(segment)
+
+            else:
+                # Spanish (existing behavior)
+                data = self.parse_line(line)
+                if not data: continue
+
+                # --- AUDIO CLEANING STEP ---
+                # We remove punctuation ONLY for the audio generation so it's not read aloud
+                # This regex replaces ?, /, ., (, ), and other symbols with an empty space
+                clean_es_audio = re.sub(r'[?/.()¿¡!]', '', data['es_text'])
+                clean_en_audio = re.sub(r'[?/.()¿¡!]', '', data['en_text'])
+
+                es_temp = f"es_temp_{i}.mp3"
+                en_temp = f"en_temp_{i}.mp3"
                 
-            if data['es_count'] > 1:
-                for _ in range(data['es_count'] - 1):
-                    line_audio_list.extend([es_audio, self.make_silence(0.5)])
-            
-            final_audio = concatenate_audioclips(line_audio_list)
-            temp_avi = f"video_temp_{i}.avi"
-            fourcc = cv2.VideoWriter_fourcc(*'XVID')
-            out = cv2.VideoWriter(temp_avi, fourcc, fps, (1280, 720))
-            
-            # --- VISUAL STEP ---
-            # We use the ORIGINAL 'data' text for the frame so the punctuation STILL SHOWS
-            frame = self.create_frame(data['es_text'], data['en_text'])
-            
-            for _ in range(int(final_audio.duration * fps) + 1):
-                out.write(frame)
-            out.release()
+                # Use the 'clean' versions for audio generation
+                asyncio.run(self.generate_audio(clean_es_audio, self.selected_voice.get(), self.selected_speed.get(), es_temp))
+                asyncio.run(self.generate_audio(clean_en_audio, "en-US-GuyNeural", self.selected_speed.get(), en_temp))
 
-            segment = VideoFileClip(temp_avi).set_audio(final_audio)
-            all_video_segments.append(segment)
+                es_audio = AudioFileClip(es_temp)
+                en_audio = AudioFileClip(en_temp)
+
+                line_audio_list = [es_audio, self.make_silence(0.5), self.make_silence(1.3)]
+                
+                for _ in range(data['en_count']):
+                    line_audio_list.extend([en_audio, self.make_silence(0.5)])
+                    
+                if data['es_count'] > 1:
+                    for _ in range(data['es_count'] - 1):
+                        line_audio_list.extend([es_audio, self.make_silence(0.5)])
+                
+                final_audio = concatenate_audioclips(line_audio_list)
+                temp_avi = f"video_temp_{i}.avi"
+                fourcc = cv2.VideoWriter_fourcc(*'XVID')
+                out = cv2.VideoWriter(temp_avi, fourcc, fps, (1280, 720))
+                
+                # --- VISUAL STEP ---
+                # We use the ORIGINAL 'data' text for the frame so the punctuation STILL SHOWS
+                frame = self.create_frame(data['es_text'], data['en_text'])
+                
+                for _ in range(int(final_audio.duration * fps) + 1):
+                    out.write(frame)
+                out.release()
+
+                segment = VideoFileClip(temp_avi).set_audio(final_audio)
+                all_video_segments.append(segment)
 
         if all_video_segments:
             final_result = concatenate_videoclips(all_video_segments)

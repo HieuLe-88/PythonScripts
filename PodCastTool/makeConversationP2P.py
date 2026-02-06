@@ -29,8 +29,6 @@ class VideoGenerator:
                     "es-ES-ElviraNeural",
                     "es-MX-DaliaNeural",
                     "es-US-PalomaNeural",
-                    #"es-ES-LaiaNeural",
-                    #"es-MX-CarlotaNeural"
                     "es-AR-ElenaNeural",
                     "es-CO-SalomeNeural"                    
                 ]
@@ -39,7 +37,7 @@ class VideoGenerator:
                 "male": [
                     "zh-CN-YunxiNeural",
                     "zh-CN-YunjianNeural",
-                    "zh-HK-HiuMaanNeural",
+                    "zh-CN-YunzeNeural",
                     "zh-TW-YunJheNeural",
                     "zh-CN-YunyangNeural"
                 ],
