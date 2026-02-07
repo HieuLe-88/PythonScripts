@@ -1,120 +1,36 @@
 
 
-[Title 1]  Cuộc hội thoại 1: Chọn đồ uống và cảm nhận hương vị
+[Title 1] 迷失在街头 - Lạc lối giữa phố thị
 
+F|大卫站在繁华的十字路口，看着路标感到迷茫。|Dàwèi zhàn zài fánhuá de shízì lùkǒu, kànzhe lùbiāo gǎndào mímáng.|David stood at a busy intersection, looking at the road signs feeling lost.
+F|虽然学了几个月汉语，但他发现还是听不懂路人的对话。|Suīrán xuéle jǐ gè yuè Hànyǔ, dàn tā fāxiàn háishì tīng bù dǒng lùrén de duìhuà.|Although he had studied Chinese for a few months, he found he still couldn't understand the conversations of passersby.
+F|那些汉字在他眼里就像一串串解不开的密码。|Nàxiē Hànzì zài tā yǎnlǐ jiù xiàng yī chuànchuàn jiě bù kāi de mìmǎ.|Those Chinese characters looked like strings of unbreakable codes in his eyes.
+F|挫败感像冬天的冷风，让他有些不知所措。|Cuòbàigǎn xiàng dōngtiān de lěngfēng, ràng tā yǒuxiē bùzhī suǒcuò.|The sense of frustration was like a cold winter wind, making him feel a bit at a loss.
 
-M|这家咖啡馆很漂亮。|Zhè jiā kāfēiguǎn hěn piàoliang.|This cafe is very beautiful.
-M|这家咖啡馆很漂亮。|Zhè jiā kāfēiguǎn hěn piàoliang.|This cafe is very beautiful.
-F|是的，窗户很大。|Shì de, chuānghu hěn dà.|Yes, the windows are very big.
-F|是的，窗户很大。|Shì de, chuānghu hěn dà.|Yes, the windows are very big.
-M|你想喝什么？|Nǐ xiǎng hē shénme?|What do you want to drink?
-M|你想喝什么？|Nǐ xiǎng hē shénme?|What do you want to drink?
-F|我想喝热茶。|Wǒ xiǎng hē rè chá.|I want to drink hot tea.
-F|我想喝热茶。|Wǒ xiǎng hē rè chá.|I want to drink hot tea.
-M|你喜欢绿茶还是红茶？|Nǐ xǐhuan lǜchá háishì hóngchá?|Do you like green tea or black tea?
-M|你喜欢绿茶还是红茶？|Nǐ xǐhuan lǜchá háishì hóngchá?|Do you like green tea or black tea?
-F|我最喜欢红茶。|Wǒ zuì xǐhuan hóngchá.|I like black tea the most.
-F|我最喜欢红茶。|Wǒ zuì xǐhuan hóngchá.|I like black tea the most.
-M|服务员，请给我一杯咖啡。|Fúwùyuán, qǐng gěi wǒ yì bēi kāfēi.|Waiter, please give me a cup of coffee.
-M|服务员，请给我一杯咖啡。|Fúwùyuán, qǐng gěi wǒ yì bēi kāfēi.|Waiter, please give me a cup of coffee.
-F|你不喝奶茶吗？|Nǐ bù hē nǎichá ma?|Don't you drink milk tea?
-F|你不喝奶茶吗？|Nǐ bù hē nǎichá ma?|Don't you drink milk tea?
-M|我不喜欢甜的。|Dàwèi: Wǒ bù xǐhuan tián de.|I don't like sweet things.
-M|我不喜欢甜的。|Dàwèi: Wǒ bù xǐhuan tián de.|I don't like sweet things.
-F|咖啡很苦吧？|Ānnà: Kāfēi hěn kǔ ba?|Coffee is very bitter, right?
-F|咖啡很苦吧？|Ānnà: Kāfēi hěn kǔ ba?|Coffee is very bitter, right?
-M|有点儿苦，但是很好喝。|Yǒudiǎnr kǔ, dànshì hěn hǎohē.|A little bitter, but it tastes good.
-M|有点儿苦，但是很好喝。|Yǒudiǎnr kǔ, dànshì hěn hǎohē.|A little bitter, but it tastes good.
-F|我不喜欢苦的味道。|Wǒ bù xǐhuan kǔ de wèidào.|I don't like the bitter taste.
-F|我不喜欢苦的味道。|Wǒ bù xǐhuan kǔ de wèidào.|I don't like the bitter taste.
-M|茶来了，小心热。|Chá lái le, xiǎoxīn rè.|The tea is here, be careful of the heat.
-M|茶来了，小心热。|Chá lái le, xiǎoxīn rè.|The tea is here, be careful of the heat.
-F|谢谢你。|Xièxie nǐ.|Thank you.
-F|谢谢你。|Xièxie nǐ.|Thank you.
-M|这里的茶怎么样？|Zhèlǐ de chá zěnmeyàng?|How is the tea here?
-M|这里的茶怎么样？|Zhèlǐ de chá zěnmeyàng?|How is the tea here?
-F|非常香，很好喝。|Fēicháng xiāng, hěn hǎohē.|Very fragrant, it's delicious.
-F|非常香，很好喝。|Fēicháng xiāng, hěn hǎohē.|Very fragrant, it's delicious.
-M|你下午还想去哪儿？|Nǐ xiàwǔ hái xiǎng qù nǎr?|Where else do you want to go this afternoon?
-M|你下午还想去哪儿？|Nǐ xiàwǔ hái xiǎng qù nǎr?|Where else do you want to go this afternoon?
-F|我想留在这儿。|Wǒ xiǎng liú zài zhèr.|I want to stay here.
-F|我想留在这儿。|Wǒ xiǎng liú zài zhèr.|I want to stay here.
-M|为什么呢？|Wèishénme ne?|Why is that?
-M|为什么呢？|Wèishénme ne?|Why is that?
-F|因为这儿很舒服。|Yīnwèi zhèr hěn shūfu.|Because it's very comfortable here.
-F|因为这儿很舒服。|Yīnwèi zhèr hěn shūfu.|Because it's very comfortable here.
-M|好，那我们多坐一会儿。|Hǎo, nà wǒmen duō zuò yíhuìr.|Okay, then let's sit for a bit longer.
-M|好，那我们多坐一会儿。|Hǎo, nà wǒmen duō zuò yíhuìr.|Okay, then let's sit for a bit longer.
-F|你要喝水吗？|Nǐ yào hē shuǐ ma?|Do you want to drink water?
-F|你要喝水吗？|Nǐ yào hē shuǐ ma?|Do you want to drink water?
-M|不喝了，我有咖啡。|Bù hē le, wǒ yǒu kāfēi.|No more, I have coffee.
-M|不喝了，我有咖啡。|Bù hē le, wǒ yǒu kāfēi.|No more, I have coffee.
-F|今天真的很高兴。|Jīntiān zhēnde hěn gāoxìng.|I'm really happy today.
-F|今天真的很高兴。|Jīntiān zhēnde hěn gāoxìng.|I'm really happy today.
-M|我也很高兴。|Wǒ yě hěn gāoxìng.|I am also very happy.
-M|我也很高兴。|Wǒ yě hěn gāoxìng.|I am also very happy.
+[Title 2] 公园里的老爷爷 - Ông cụ ở công viên
 
+F|他走进一家安静的公园，看到一位老爷爷在练习太极。|Tā zǒu jìn yījiā ānjìng de gōngyuán, kàndào yī wèi lǎoyéyé zài liànxí tàijí.|He walked into a quiet park and saw an old man practicing Tai Chi.
+F|老爷爷笑着对他招手，用缓慢而清晰的汉语和他打招呼。|Lǎoyéyé xiàozhe duì tā zhāoshǒu, yòng huǎnmàn ér qīngxī de Hànyǔ hé tā dǎzhāohū.|The old man smiled and waved at him, greeting him in slow and clear Chinese.
+F|大卫试着回答，惊讶地发现自己能听懂大部分的内容。|Dàwèi shìzhe huídá, jīngyà de fāxiàn zìjǐ néng tīng dǒng dà bùfèn de nèiróng.|David tried to answer and was surprised to find he could understand most of the content.
+F|那刻，语言不再是课本上的公式，而是温暖的交流。|Nà kè, yǔyán bù zài shì kèběn shàng de gōngshì, ér shì wēnnuǎn de jiāoliú.|At that moment, language was no longer a formula in a textbook, but a warm exchange.
 
+[Title 3] 菜市场的烟火气 - Hơi thở cuộc sống ở chợ dân sinh
 
+F|为了挑战自己，大卫决定去热闹的菜市场买水果。|Wèile tiǎozhàn zìjǐ, Dàwèi juédìng qù rènào de càishìchǎng mǎi shuǐguǒ.|To challenge himself, David decided to go to a bustling wet market to buy fruit.
+F|到处都是叫卖声，空气中弥漫着生活的气息。|Dàochù dōu shì jiàomài shēng, kōngqì zhōng mímànzhe shēnghuó de qìxí.|Cries of vendors were everywhere, and the air was filled with the breath of life.
+F|他成功地用汉语砍价，还学会了几个地道的词汇。|Tā chénggōng de yòng Hànyǔ kǎnjià, hái xuéhuìle jǐ gè dìdào de cíhuì.|He successfully bargained in Chinese and even learned a few authentic vocabulary words.
+F|这次小小的胜利，让他对自己的汉语有了信心。|Zhè cì xiǎoxiǎo de shènglì, ràng tā duì zìjǐ de Hànyǔ yǒule xìnxīn.|This small victory gave him confidence in his Chinese.
 
-[Title 2]  Cuộc hội thoại 2: Cùng nhau đọc sách bên cửa sổ nắng
+[Title 4] 城市天台的思考 - Suy ngẫm trên sân thượng thành phố
 
-M|你在看什么书？|Nǐ zài kàn shénme shū?|What book are you reading?
-M|你在看什么书？|Nǐ zài kàn shénme shū?|What book are you reading?
-F|我在看一本小说。|Wǒ zài kàn yì běn xiǎoshuō.|I am reading a novel.
-F|我在看一本小说。|Wǒ zài kàn yì běn xiǎoshuō.|I am reading a novel.
-M|这本小说的名字是什么？|Zhè běn xiǎoshuō de míngzi shì shénme?|What is the name of this novel?
-M|这本小说的名字是什么？|Zhè běn xiǎoshuō de míngzi shì shénme?|What is the name of this novel?
-F|它的名字叫《你好》。|Tā de míngzi jiào "Nǐ hǎo".|Its name is "Hello".
-F|它的名字叫《你好》。|Tā de míngzi jiào "Nǐ hǎo".|Its name is "Hello".
-M|这本书有意思吗？|Zhè běn shū yǒuyìsi ma?|Is this book interesting?
-M|这本书有意思吗？|Zhè běn shū yǒuyìsi ma?|Is this book interesting?
-F|很有意思，我很喜欢。|Hěn yǒuyìsi, wǒ hěn xǐhuan.|Very interesting, I like it a lot.
-F|很有意思，我很喜欢。|Hěn yǒuyìsi, wǒ hěn xǐhuan.|Very interesting, I like it a lot.
-M|它是谁写的？|Tā shì shuí xiě de?|Who wrote it?
-M|它是谁写的？|Tā shì shuí xiě de?|Who wrote it?
-F|是一个中国作家写的。|Shì yí gè Zhōngguó zuòjiā xiě de.|It was written by a Chinese author.
-F|是一个中国作家写的。|Shì yí gè Zhōngguó zuòjiā xiě de.|It was written by a Chinese author.
-M|你每天都看书吗？|Nǐ měitiān dōu kàn shū ma?|Do you read every day?
-M|你每天都看书吗？|Nǐ měitiān dōu kàn shū ma?|Do you read every day?
-F|我睡觉前看一个小时。|Wǒ shuìjiào qián kàn yí gè xiǎoshí.|I read for an hour before sleeping.
-F|我睡觉前看一个小时。|Wǒ shuìjiào qián kàn yí gè xiǎoshí.|I read for an hour before sleeping.
-M|我也喜欢读书。|Wǒ yě xǐhuan dú shū.|I also like reading books.
-M|我也喜欢读书。|Wǒ yě xǐhuan dú shū.|I also like reading books.
-F|你喜欢看什么书？|Nǐ xǐhuan kàn shénme shū?|What books do you like to read?
-F|你喜欢看什么书？|Nǐ xǐhuan kàn shénme shū?|What books do you like to read?
-M|我喜欢看历史书。|Wǒ xǐhuan kàn lìshǐ shū.|I like reading history books.
-M|我喜欢看历史书。|Wǒ xǐhuan kàn lìshǐ shū.|I like reading history books.
-F|历史书有点儿难。|Lìshǐ shū yǒudiǎnr nán.|History books are a bit difficult.
-F|历史书有点儿难。|Lìshǐ shū yǒudiǎnr nán.|History books are a bit difficult.
-M|没关系，我慢慢看。|Méi guānxi, wǒ mànmàn kàn.|It's okay, I read slowly.
-M|没关系，我慢慢看。|Méi guānxi, wǒ mànmàn kàn.|It's okay, I read slowly.
-F|这里的阳光很暖和。|Nǐ kàn, yángguāng hěn nuǎnhuo.|Look, the sunshine is very warm.
-F|这里的阳光很暖和。|Nǐ kàn, yángguāng hěn nuǎnhuo.|Look, the sunshine is very warm.
-M|书里的故事感人吗？|Shū lǐ de gùshi gǎnrén ma?|Is the story in the book touching?
-M|书里的故事感人吗？|Shū lǐ de gùshi gǎnrén ma?|Is the story in the book touching?
-F|很感人，我也想写书。|Hěn gǎnrén, wǒ yě xiǎng xiě shū.|Very touching, I also want to write a book.
-F|很感人，我也想写书。|Hěn gǎnrén, wǒ yě xiǎng xiě shū.|Very touching, I also want to write a book.
-M|真的吗？你太棒了！|Zhēnde ma? Nǐ tài bàng le!|Really? You're amazing!
-M|真的吗？你太棒了！|Zhēnde ma? Nǐ tài bàng le!|Really? You're amazing!
-F|我想写我们的故事。|Wǒ xiǎng xiě wǒmen de gùshi.|I want to write our story.
-F|我想写我们的故事。|Wǒ xiǎng xiě wǒmen de gùshi.|I want to write our story.
-M|我们的故事？|Wǒmen de gùshi?|Our story?
-M|我们的故事？|Wǒmen de gùshi?|Our story?
-F|对，关于今天的故事。|Duì, guānyú jīntiān de gùshi.|Yes, a story about today.
-F|对，关于今天的故事。|Duì, guānyú jīntiān de gùshi.|Yes, a story about today.
-M|那一定很有意思。|Nà yídìng hěn yǒuyìsi.|That must be very interesting.
-M|那一定很有意思。|Nà yídìng hěn yǒuyìsi.|That must be very interesting.
-F|我们一起看书吧。|Wǒmen yìqǐ kàn shū ba.|Let's read together.
-F|我们一起看书吧。|Wǒmen yìqǐ kàn shū ba.|Let's read together.
-M|好，下午的时间很美。|Hǎo, xiàwǔ de shíjiān hěn měi.|Okay, the afternoon time is beautiful.
-M|好，下午的时间很美。|Hǎo, xiàwǔ de shíjiān hěn měi.|Okay, the afternoon time is beautiful.
+F|傍晚，大卫爬上一座大楼的天台，俯瞰整座城市的灯火。|Bàngwǎn, Dàwèi pá shàng yīzuò dàlóu de tiāntái, fǔkàn zhěng zuò chéngshì de dēnghuǒ.|In the evening, David climbed to the rooftop of a building, overlooking the lights of the entire city.
+F|他戴着耳机，听着一首中文流行歌曲，竟然听懂了歌词。|Tā dàizhe ěrjī, tīngzhe yī shǒu Zhōngwén liúxíng gēqǔ, jìngrán tīng dǒngle gēcí.|He wore headphones, listening to a Chinese pop song, and surprisingly understood the lyrics.
+F|那些旋律似乎在讲述着他这段时间的心路历程。|Nàxiē xuánlǜ sìhū zài jiǎngshùzhe tā zhè duàn shíjiān de xīnlù lìchéng.|Those melodies seemed to be telling the story of his journey during this time.
+F|他意识到，语言的精髓在于感受，而不仅仅是记忆。|Tā yìshí dào, yǔyán de jīngsuǐ zàiyú gǎnshòu, ér bù jǐnjǐn shì jìyì.|He realized that the essence of language lies in feeling, not just memory.
 
+[Title 5] 跨越边界的信 - Lá thư vượt qua biên giới
 
-
-
-
-
-
-
-
+F|回到住处，他没有打开电脑，而是拿出一张明信片。|Huídào zhùchù, tā méiyǒu dǎkāi diànnǎo, ér shì ná chū yī zhāng míngxìnpiàn.|Returning to his place, he didn't turn on the computer, but took out a postcard.
+F|他用端正的汉字给中国朋友写了一段感谢的话。|Tā yòng duānzhèng de Hànzì gěi Zhōngguó péngyǒu xiěle yīduàn gǎnxiè de huà.|He wrote a message of thanks to a Chinese friend in neat Chinese characters.
+F|虽然写得慢，但每一个字都充满了真实的感情。|Suīrán xiě dé màn, dàn měi yīgè zì dōu chōngmǎnle zhēnshí de gǎnqíng.|Although he wrote slowly, every character was full of genuine emotion.
+F|大卫知道，他的汉语旅程才刚刚开始，但他已不再恐惧。|Dàwèi zhīdào, tā de Hànyǔ lǚchéng cái gānggāng kāishǐ, dàn tā yǐ bù zài kǒngjù.|David knew his Chinese journey had just begun, but he was no longer afraid.
