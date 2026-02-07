@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips, concatenate_audioclips, AudioClip
 
+
 class VideoGenerator:
     def __init__(self, root):
         self.root = root
@@ -61,7 +62,20 @@ class VideoGenerator:
         tk.Label(chi_frame, text="Trans repeats:").pack(side=tk.LEFT, padx=(8,0))
         tk.Spinbox(chi_frame, from_=0, to=10, textvariable=self.trans_repeat, width=4).pack(side=tk.LEFT, padx=4)
         tk.Label(chi_frame, text="CN Voice:").pack(side=tk.LEFT, padx=(8,0))
-        ttk.Combobox(chi_frame, textvariable=self.chinese_voice, values=["zh-CN-XiaoxiaoNeural","zh-CN-XiaoyiNeural","zh-CN-YunxiNeural"], width=22, state="readonly").pack(side=tk.LEFT, padx=4)
+        # Expanded list of Chinese voices (add more as needed)
+        chi_voices = [
+            "zh-CN-XiaoxiaoNeural",
+            "zh-CN-XiaoyiNeural",
+
+            "zh-HK-HiuGaaiNeural",
+            "zh-TW-HsiaoChenNeural",
+
+            "zh-CN-YunxiNeural",
+            "zh-CN-YunyangNeural",
+            "zh-CN-YunjianNeural",
+            "zh-TW-YunJheNeural",
+        ]
+        ttk.Combobox(chi_frame, textvariable=self.chinese_voice, values=chi_voices, width=22, state="readonly").pack(side=tk.LEFT, padx=4)
 
         # 3. Logo Selection
         tk.Label(root, text="Watermark Logo (Optional):").pack(pady=(10, 0))
@@ -85,7 +99,6 @@ class VideoGenerator:
 
         self.status_label = tk.Label(root, text="Ready", fg="blue")
         self.status_label.pack()
-
     def browse_folder(self):
         folder = filedialog.askdirectory()
         if folder:
@@ -286,6 +299,9 @@ class VideoGenerator:
             lines = [line for line in f.readlines() if line.strip()]
 
         all_video_segments = []
+        # track temporary files and opened clip objects for proper cleanup
+        temp_files = set()
+        clip_objects = []
         fps = 4
         out_folder = self.output_dir.get()
         final_path = os.path.join(out_folder, "pattern_lesson_wrapped.mp4")
@@ -299,44 +315,77 @@ class VideoGenerator:
 
                 # Clean punctuation for TTS generation
                 clean_hanzi = re.sub(r'[?/.()¿¡!]', '', data['hanzi'])
-                clean_eng = re.sub(r'[?/.()¿¡!]', '', data['english'])
+                raw_eng = data['english']
 
+                # Prepare temp tracking for Chinese/English parts
                 cn_temp = f"cn_temp_{i}.mp3"
-                en_temp = f"en_temp_{i}.mp3"
+                en_part_files = []
 
-                # Generate Chinese and English audio
+                # Generate CN audio
                 asyncio.run(self.generate_audio(clean_hanzi, self.chinese_voice.get(), self.selected_speed.get(), cn_temp))
-                asyncio.run(self.generate_audio(clean_eng, "en-US-GuyNeural", self.selected_speed.get(), en_temp))
-
                 cn_audio = AudioFileClip(cn_temp)
-                en_audio = AudioFileClip(en_temp)
+                clip_objects.append(cn_audio)
+                temp_files.add(cn_temp)
 
-                # Pattern: CN -> 0.5s -> 1.3s gap -> EN -> repeat EN trans_repeat times -> repeat CN main_repeat times
+                # Split English on '/' to create parts; if no '/', create single part
+                eng_parts = [p.strip() for p in re.split(r'/+', raw_eng) if p.strip()]
+                if len(eng_parts) > 1:
+                    for j, part in enumerate(eng_parts):
+                        clean_part = re.sub(r'[?/.()¿¡!]', '', part)
+                        part_file = f"en_temp_{i}_{j}.mp3"
+                        asyncio.run(self.generate_audio(clean_part, "en-US-GuyNeural", self.selected_speed.get(), part_file))
+                        en_part_files.append(part_file)
+                        clip_objects.append(AudioFileClip(part_file))
+                        temp_files.add(part_file)
+                else:
+                    en_single = f"en_temp_{i}.mp3"
+                    clean_eng = re.sub(r'[?/.()¿¡!]', '', raw_eng)
+                    asyncio.run(self.generate_audio(clean_eng, "en-US-GuyNeural", self.selected_speed.get(), en_single))
+                    en_part_files.append(en_single)
+                    en_audio = AudioFileClip(en_single)
+                    clip_objects.append(en_audio)
+                    temp_files.add(en_single)
+
+                # Build audio pattern: CN -> 0.5s -> 1.3s -> EN parts (0.5s between parts) repeated -> CN repeats
                 line_audio_list = [cn_audio, self.make_silence(0.5), self.make_silence(1.3)]
                 for _ in range(self.trans_repeat.get()):
-                    line_audio_list.extend([en_audio, self.make_silence(0.5)])
+                    for k, part_file in enumerate(en_part_files):
+                        part_clip = AudioFileClip(part_file)
+                        clip_objects.append(part_clip)
+                        line_audio_list.append(part_clip)
+                        if k < len(en_part_files) - 1:
+                            line_audio_list.append(self.make_silence(0.5))
+                    line_audio_list.append(self.make_silence(0.5))
+
                 if self.main_repeat.get() > 1:
                     for _ in range(self.main_repeat.get() - 1):
                         line_audio_list.extend([cn_audio, self.make_silence(0.5)])
 
                 final_audio = concatenate_audioclips(line_audio_list)
+                clip_objects.append(final_audio)
                 temp_avi = f"video_temp_{i}.avi"
                 fourcc = cv2.VideoWriter_fourcc(*'XVID')
                 out = cv2.VideoWriter(temp_avi, fourcc, fps, (1280, 720))
 
                 # Visual: pass hanzi (main), english (trans), and pinyin
-                frame = self.create_frame(data['hanzi'], data['english'], pinyin_text=data['pinyin'])
+                frame = self.create_frame(data['hanzi'], data['english'], pinyin_text=data.get('pinyin'))
                 for _ in range(int(final_audio.duration * fps) + 1):
                     out.write(frame)
                 out.release()
 
                 segment = VideoFileClip(temp_avi).set_audio(final_audio)
+                clip_objects.append(segment)
+                temp_files.add(temp_avi)
                 all_video_segments.append(segment)
 
             else:
                 # Spanish (existing behavior)
                 data = self.parse_line(line)
-                if not data: continue
+                if not data:
+                    continue
+                # Validate expected keys to avoid KeyError on malformed lines
+                if 'en_text' not in data or 'es_text' not in data:
+                    continue
 
                 # --- AUDIO CLEANING STEP ---
                 # We remove punctuation ONLY for the audio generation so it's not read aloud
@@ -353,6 +402,8 @@ class VideoGenerator:
 
                 es_audio = AudioFileClip(es_temp)
                 en_audio = AudioFileClip(en_temp)
+                clip_objects.extend([es_audio, en_audio])
+                temp_files.update([es_temp, en_temp])
 
                 line_audio_list = [es_audio, self.make_silence(0.5), self.make_silence(1.3)]
                 
@@ -364,6 +415,7 @@ class VideoGenerator:
                         line_audio_list.extend([es_audio, self.make_silence(0.5)])
                 
                 final_audio = concatenate_audioclips(line_audio_list)
+                clip_objects.append(final_audio)
                 temp_avi = f"video_temp_{i}.avi"
                 fourcc = cv2.VideoWriter_fourcc(*'XVID')
                 out = cv2.VideoWriter(temp_avi, fourcc, fps, (1280, 720))
@@ -377,20 +429,34 @@ class VideoGenerator:
                 out.release()
 
                 segment = VideoFileClip(temp_avi).set_audio(final_audio)
+                clip_objects.append(segment)
+                temp_files.add(temp_avi)
                 all_video_segments.append(segment)
 
         if all_video_segments:
             final_result = concatenate_videoclips(all_video_segments)
             final_result.write_videofile(final_path, codec="libx264", audio_codec="aac", fps=fps)
-            
-            for i in range(len(lines)):
-                for f in [f"es_temp_{i}.mp3", f"en_temp_{i}.mp3", f"cn_temp_{i}.mp3", f"video_temp_{i}.avi"]:
-                    if os.path.exists(f):
-                        try:
-                            os.remove(f)
-                        except Exception:
-                            pass
-            
+
+            # Close moviepy clip objects to release file handles
+            try:
+                final_result.close()
+            except Exception:
+                pass
+
+            for c in clip_objects:
+                try:
+                    c.close()
+                except Exception:
+                    pass
+
+            # Remove all temporary files we tracked
+            for f in list(temp_files):
+                if os.path.exists(f):
+                    try:
+                        os.remove(f)
+                    except Exception:
+                        pass
+
             messagebox.showinfo("Success", f"Video saved to:\n{final_path}")
 
     def start_process(self):
