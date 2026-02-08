@@ -3,6 +3,7 @@ import edge_tts
 import os
 import re
 import numpy as np
+import glob
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 import tkinter as tk
@@ -522,6 +523,10 @@ class VideoGenerator:
         else:
             main_size = base_main_size
 
+        # For Spanish, reduce main text size by 20%
+        if self.lang_var.get() == "Spanish":
+            main_size = int(main_size * 0.8)
+
         # Create fonts with computed sizes
         f_main = get_font("msyh.ttc", main_size)
         f_pinyin = get_font("arial.ttf", base_pinyin_size)
@@ -578,8 +583,8 @@ class VideoGenerator:
             else:
                 txt_main = wrap(data['text_1'], f_main, b_w - padding)
                 txt_en = wrap(data['text_2'], f_eng, b_w - padding)
-                draw.text((cx, cy - 15), txt_main, fill=main_color, font=f_main, anchor="mm", align="center")
-                draw.text((cx, cy + 25), txt_en, fill=eng_color, font=f_eng, anchor="mm", align="center")
+                draw.text((cx, cy - 6), txt_main, fill=main_color, font=f_main, anchor="mm", align="center")
+                draw.text((cx, cy + 40), txt_en, fill=eng_color, font=f_eng, anchor="mm", align="center")
 
         return np.array(img)
 
@@ -605,12 +610,44 @@ class VideoGenerator:
             data['title_key'] = current_title
             i = seg_index
             seg_index += 1
-            temp_audio = f"temp_{i}.mp3"
-            clean_txt = re.sub(r'[?/.()¿¡!]', '', data['text_1'])
-            asyncio.run(self.generate_audio(clean_txt, data['voice'], self.selected_speed.get(), temp_audio))
-            a_clip = AudioFileClip(temp_audio)
-            silence = AudioClip(lambda t: [0, 0], duration=0.9, fps=44100)
-            final_a = concatenate_audioclips([a_clip, silence])
+            
+            # Handle Spanish sentence splitting with pauses
+            if self.lang_var.get() == "Spanish" and '.' in data['text_1']:
+                sentences = [s.strip() for s in data['text_1'].split('.') if s.strip()]
+                # Clean and filter out empty sentences
+                sentences = [re.sub(r'[?/.()¿¡!]', '', s).strip() for s in sentences]
+                sentences = [s for s in sentences if s]
+                if sentences:
+                    audio_clips = []
+                    for j, sent in enumerate(sentences):
+                        temp_audio = f"temp_{i}_{j}.mp3"
+                        asyncio.run(self.generate_audio(sent, data['voice'], self.selected_speed.get(), temp_audio))
+                        a_clip = AudioFileClip(temp_audio)
+                        audio_clips.append(a_clip)
+                        # Add 0.1s pause between sentences, but not after the last one
+                        if j < len(sentences) - 1:
+                            silence_pause = AudioClip(lambda t: [0, 0], duration=0.1, fps=44100)
+                            audio_clips.append(silence_pause)
+                    # Add the standard 0.1s silence at the end
+                    silence_end = AudioClip(lambda t: [0, 0], duration=0.1, fps=44100)
+                    audio_clips.append(silence_end)
+                    final_a = concatenate_audioclips(audio_clips)
+                else:
+                    # Fallback if no valid sentences
+                    temp_audio = f"temp_{i}.mp3"
+                    clean_txt = re.sub(r'[?/.()¿¡!]', '', data['text_1'])
+                    asyncio.run(self.generate_audio(clean_txt, data['voice'], self.selected_speed.get(), temp_audio))
+                    a_clip = AudioFileClip(temp_audio)
+                    silence = AudioClip(lambda t: [0, 0], duration=0.1, fps=44100)
+                    final_a = concatenate_audioclips([a_clip, silence])
+            else:
+                # Default behavior for Chinese or no periods
+                temp_audio = f"temp_{i}.mp3"
+                clean_txt = re.sub(r'[?/.()¿¡!]', '', data['text_1'])
+                asyncio.run(self.generate_audio(clean_txt, data['voice'], self.selected_speed.get(), temp_audio))
+                a_clip = AudioFileClip(temp_audio)
+                silence = AudioClip(lambda t: [0, 0], duration=0.1, fps=44100)
+                final_a = concatenate_audioclips([a_clip, silence])
             frame_rgb = self.create_frame(data)
             v_seg = ImageClip(frame_rgb).set_duration(final_a.duration).set_audio(final_a)
             all_segments.append(v_seg)
@@ -620,8 +657,12 @@ class VideoGenerator:
             final_name = f"output_{self.lang_var.get()}_{time_str}.mp4"
             final_path = os.path.join(self.output_dir.get(), final_name)
             concatenate_videoclips(all_segments, method="compose").write_videofile(final_path, codec="libx264", audio_codec="aac", fps=10)
-            for i in range(len(lines)):
-                if os.path.exists(f"temp_{i}.mp3"): os.remove(f"temp_{i}.mp3")
+            # Clean up all temp audio files
+            for temp_file in glob.glob("temp_*.mp3"):
+                try:
+                    os.remove(temp_file)
+                except:
+                    pass
             messagebox.showinfo("Xong!", f"Video đã lưu: {final_path}")
 
     def start_process(self):
@@ -649,6 +690,12 @@ class VideoGenerator:
                 self.process_video(file)
         except Exception as e:
             messagebox.showerror("Lỗi", str(e))
+        # Clean up any remaining temp audio files
+        for temp_file in glob.glob("temp_*.mp3"):
+            try:
+                os.remove(temp_file)
+            except:
+                pass
         self.status_label.config(text="Sẵn sàng", fg="blue")
 
 if __name__ == "__main__":

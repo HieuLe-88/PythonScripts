@@ -1,0 +1,68 @@
+
+//prompt
+tạo ảnh anime, 2 người nam nữ nói chuyện, khung hình rộng, chủ đề Nghề nghiệp, người chỉ chiếm 50% khung hình.
+
+//prompt
+
+gen 1 cuộc hội thoại spanish theo chủ đề nghề nghiệp, bối cảnh như trong hình,, trình độ A1, A2, 30 câu, mỗi câu không quá 9 từ,  format như bên dưới: 
+F|Perdón, ¿me ayudas?|Excuse me, can you help me?
+
+M|Claro, ¿qué buscas?|Sure, what are you looking for?
+
+//
+topic
+1. Thông tin cá nhân cơ bản
+姓名 (Xìngmíng): Tên họ (Bạn tên là gì? Họ của bạn là gì?).
+
+国籍 (Guójí): Quốc tịch (Bạn là người nước nào?).
+
+年龄 (Niánlíng): Tuổi tác (Năm nay bạn bao nhiêu tuổi?).
+
+职业 (Zhíyè): Nghề nghiệp (Bạn là học sinh hay đã đi làm?). Spain (done)
+
+电话号码 (Diànhuà hàomǎ): Số điện thoại (Hỏi và đọc số điện thoại). Spain (done)
+
+2. Gia đình và Các mối quan hệ
+家人 (Jiārén): Nhà bạn có mấy người? Gồm những ai? Spain (done)
+
+相貌 (Xiàngmào): Miêu tả ngoại hình đơn giản (Cao, xinh, trẻ...).
+
+朋友 (Péngyǒu): Giới thiệu về một người bạn thân.
+
+3. Thời gian và Thời tiết
+时间 (Shíjiān): Bây giờ là mấy giờ?
+
+日期 (Rìqī): Hôm nay là thứ mấy, ngày mấy, tháng mấy?
+
+生日 (Shēngrì): Sinh nhật của bạn và người thân.
+
+天气 (Tiānqì): Hôm nay trời nóng hay lạnh? Có mưa không?
+
+4. Hoạt động hàng ngày
+日常安排 (Rìcháng ānpái): Mấy giờ bạn thức dậy/đi ngủ/ăn cơm?
+
+交通 (Jiāotōng): Bạn đi làm/đi học bằng phương tiện gì?
+
+场所 (Chǎngsuǒ): Bạn đang ở đâu? (Trường học, bệnh viện, cửa hàng).
+
+方向 (Fāngxiàng): Chỉ đường đơn giản (Bên trái, bên phải, phía trước).
+
+5. Sở thích và Nhu cầu
+颜色 (Yánsè): Bạn thích màu gì nhất?
+
+水果 (Shuǐguǒ): Bạn muốn mua trái cây gì? Bao nhiêu tiền?
+
+饮食 (Yǐnshí): Bạn muốn ăn gì/uống gì? (Trà, cà phê, cơm Tàu).
+
+爱好 (Àihào): Bạn thích xem phim hay đọc sách?
+
+运动 (Yùndòng): Bạn biết bơi không? Bạn thích đá bóng không?
+
+购物 (Gòuwù): Đi siêu thị mua quần áo, đồ đạc.
+
+6. Khả năng và Tình trạng
+语言能力 (Yǔyán nénglì): Bạn biết nói tiếng Trung không? Có khó không?
+
+身体状况 (Shēntǐ zhuàngkuàng): Hôm nay bạn thấy thế nào? (Mệt, khỏe, đau đầu).
+
+钱 (Qián): Cái này bao nhiêu tiền? Đắt quá hay rẻ?

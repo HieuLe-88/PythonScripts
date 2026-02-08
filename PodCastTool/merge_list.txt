@@ -1,4 +1,5 @@
 
-file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_pattern_lesson_wrapped.mp4'
-file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_1_ChineseCornerStart2_repeat.mp4'
-file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_z_ChineseCornerEnd_repeat.mp4'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_output_Spanish_20260208_213058.mp4'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_1_Begin.mp4'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_output_Spanish_20260208_213718.mp4'
+file 'C:\MyFolder\Py_Script\PythonScripts\PodCastTool\fixed_z_end.mp4'

@@ -1,6 +1,134 @@
 
-F|Perdón, ¿me ayudas?|Excuse me, can you help me?
-M|Claro, ¿qué buscas?|Sure, what are you looking for?
-F|La Plaza Mayor.|Plaza Mayor.
-M|Está en el centro.|It’s in the center.
-F|¿Voy en metro?|Should I take the metro?
+
+
+[Title 1]
+
+M|¡Hola! El parque está muy bonito hoy.|Hi! The park is very beautiful today.
+M|¡Hola! El parque está muy bonito hoy.|Hi! The park is very beautiful today.
+F|Sí, las flores son hermosas.|Yes, the flowers are beautiful.
+F|Sí, las flores son hermosas.|Yes, the flowers are beautiful.
+M|Tu té de burbujas se ve rico.|Your bubble tea looks delicious.
+M|Tu té de burbujas se ve rico.|Your bubble tea looks delicious.
+F|Gracias. Es mi bebida favorita.|Thanks. It is my favorite drink.
+F|Gracias. Es mi bebida favorita.|Thanks. It is my favorite drink.
+M|Oye, ¿vives cerca de aquí?|Hey, do you live near here?
+M|Oye, ¿vives cerca de aquí?|Hey, do you live near here?
+F|Sí, vivo con mi familia cerca.|Yes, I live with my family nearby.
+F|Sí, vivo con mi familia cerca.|Yes, I live with my family nearby.
+M|¿Cuántas personas hay en tu familia?|How many people are in your family?
+M|¿Cuántas personas hay en tu familia?|How many people are in your family?
+F|Somos cinco personas en total.|We are five people in total.
+F|Somos cinco personas en total.|We are five people in total.
+M|Es una familia grande.|It is a big family.
+M|Es una familia grande.|It is a big family.
+F|Sí. Tengo dos hermanos mayores.|Yes. I have two older brothers.
+F|Sí. Tengo dos hermanos mayores.|Yes. I have two older brothers.
+M|¿Cómo se llaman tus hermanos?|What are your brothers' names?
+M|¿Cómo se llaman tus hermanos?|What are your brothers' names?
+F|Se llaman Luis y Pedro.|Their names are Luis and Pedro.
+F|Se llaman Luis y Pedro.|Their names are Luis and Pedro.
+M|¿Y cómo son ellos?|And what are they like?
+M|¿Y cómo son ellos?|And what are they like?
+F|Ellos son muy divertidos y amables.|They are very funny and kind.
+F|Ellos son muy divertidos y amables.|They are very funny and kind.
+M|¿Vives también với tus padres?|Do you also live with your parents?
+M|¿Vives también với tus padres?|Do you also live with your parents?
+F|Sí, vivo con mi padre y madre.|Yes, I live with my father and mother.
+F|Sí, vivo con mi padre y madre.|Yes, I live with my father and mother.
+M|¿A qué se dedica tu padre?|What does your father do?
+M|¿A qué se dedica tu padre?|What does your father do?
+F|Mi padre es médico en el hospital.|My father is a doctor at the hospital.
+F|Mi padre es médico en el hospital.|My father is a doctor at the hospital.
+M|¡Qué interesante! ¿Y tu madre?|How interesting! And your mother?
+M|¡Qué interesante! ¿Y tu madre?|How interesting! And your mother?
+F|Ella es profesora de inglés.|She is an English teacher.
+F|Ella es profesora de inglés.|She is an English teacher.
+M|¿Tienes alguna mascota en casa?|Do you have any pets at home?
+M|¿Tienes alguna mascota en casa?|Do you have any pets at home?
+F|Sí, tengo un perro pequeño.|Yes, I have a small dog.
+F|Sí, tengo un perro pequeño.|Yes, I have a small dog.
+M|En mi familia somos solo tres.|In my family, we are only three.
+M|En mi familia somos solo tres.|In my family, we are only three.
+F|¿Eres hijo único?|Are you an only child?
+F|¿Eres hijo único?|Are you an only child?
+M|Sí, no tengo hermanos ni hermanas.|Yes, I have no brothers or sisters.
+M|Sí, no tengo hermanos ni hermanas.|Yes, I have no brothers or sisters.
+F|¿Vives con tus padres también?|Do you live with your parents too?
+F|¿Vives con tus padres también?|Do you live with your parents too?
+M|Sí, somos muy unidos.|Yes, we are very close.
+M|Sí, somos muy unidos.|Yes, we are very close.
+F|¡Qué bueno! La familia es importante.|That's good! Family is important.
+F|¡Qué bueno! La familia es importante.|That's good! Family is important.
+M|Tienes razón. Disfruta tu té.|You're right. Enjoy your tea.
+M|Tienes razón. Disfruta tu té.|You're right. Enjoy your tea.
+F|Gracias. ¡Que tengas un buen día!|Thanks. Have a nice day!
+F|Gracias. ¡Que tengas un buen día!|Thanks. Have a nice day!
+
+
+
+
+[Title 2]
+
+
+
+M|¡Qué ricas están estas galletas!|These cookies are so delicious!
+M|¡Qué ricas están estas galletas!|These cookies are so delicious!
+F|Gracias, las hice esta mañana.|Thanks, I made them this morning.
+F|Gracias, las hice esta mañana.|Thanks, I made them this morning.
+M|El té también está muy bueno.|The tea is also very good.
+M|El té también está muy bueno.|The tea is also very good.
+F|Me alegra que te guste mucho.|I'm glad you like it a lot.
+F|Me alegra que te guste mucho.|I'm glad you like it a lot.
+M|Oye, ¿vives sola en este apartamento?|Hey, do you live alone in this apartment?
+M|Oye, ¿vives sola en este apartamento?|Hey, do you live alone in this apartment?
+F|No, vivo con mi familia aquí.|No, I live with my family here.
+F|No, vivo con mi familia aquí.|No, I live with my family here.
+M|¿Cuántas personas viven en tu casa?|How many people live in your house?
+M|¿Cuántas personas viven en tu casa?|How many people live in your house?
+F|En mi casa somos cuatro personas.|In my house we are four people.
+F|En mi casa somos cuatro personas.|In my house we are four people.
+M|¿Quiénes son los miembros de tu familia?|Who are the members of your family?
+M|¿Quiénes son los miembros de tu familia?|Who are the members of your family?
+F|Somos mis padres, mi hermana y yo.|It's my parents, my sister, and me.
+F|Somos mis padres, mi hermana y yo.|It's my parents, my sister, and me.
+M|¿Cómo se llama tu hermana menor?|What is your younger sister's name?
+M|¿Cómo se llama tu hermana menor?|What is your younger sister's name?
+F|Ella se llama Lucía y es estudiante.|Her name is Lucía and she's a student.
+F|Ella se llama Lucía y es estudiante.|Her name is Lucía and she's a student.
+M|¿Es ella mayor o menor que tú?|Is she older or younger than you?
+M|¿Es ella mayor o menor que tú?|Is she older or younger than you?
+F|Lucía es tres años menor que yo.|Lucía is three years younger than me.
+F|Lucía es tres años menor que yo.|Lucía is three years younger than me.
+M|¿Y a qué se dedican tus padres?|And what do your parents do?
+M|¿Y a qué se dedican tus padres?|And what do your parents do?
+F|Mi padre es arquitecto en la ciudad.|My father is an architect in the city.
+F|Mi padre es arquitecto en la ciudad.|My father is an architect in the city.
+M|¡Qué bien! ¿Y tu madre qué hace?|Great! And what does your mother do?
+M|¡Qué bien! ¿Y tu madre qué hace?|Great! And what does your mother do?
+F|Mi madre trabaja en una oficina.|My mother works in an office.
+F|Mi madre trabaja en una oficina.|My mother works in an office.
+M|¿Tu familia es de aquí originalmente?|Is your family from here originally?
+M|¿Tu familia es de aquí originalmente?|Is your family from here originally?
+F|Sí, todos somos de esta ciudad.|Yes, we are all from this city.
+F|Sí, todos somos de esta ciudad.|Yes, we are all from this city.
+M|Yo vivo solo con mi madre.|I live alone with my mother.
+M|Yo vivo solo con mi madre.|I live alone with my mother.
+F|¿No tienes hermanos o hermanas?|Don't you have brothers or sisters?
+F|¿No tienes hermanos o hermanas?|Don't you have brothers or sisters?
+M|No, soy hijo único en casa.|No, I am an only child at home.
+M|No, soy hijo único en casa.|No, I am an only child at home.
+F|¿Te gusta ser hijo único?|Do you like being an only child?
+F|¿Te gusta ser hijo único?|Do you like being an only child?
+M|A veces sí, pero es un poco solitario.|Sometimes yes, but it's a bit lonely.
+M|A veces sí, pero es un poco solitario.|Sometimes yes, but it's a bit lonely.
+F|Entiendo. Mi casa siempre está ruidosa.|I understand. My house is always noisy.
+F|Entiendo. Mi casa siempre está ruidosa.|I understand. My house is always noisy.
+M|¡Jaja! Pero nunca estás aburrida.|Haha! But you are never bored.
+M|¡Jaja! Pero nunca estás aburrida.|Haha! But you are never bored.
+F|Eso es verdad. Siempre hay algo divertido.|That's true. There's always something fun.
+F|Eso es verdad. Siempre hay algo divertido.|That's true. There's always something fun.
+M|Gracias por invitarme a tu casa.|Thanks for inviting me to your house.
+M|Gracias por invitarme a tu casa.|Thanks for inviting me to your house.
+F|De nada, cuando quieras vuelve aquí.|You're welcome, come back here whenever.
+F|De nada, cuando quieras vuelve aquí.|You're welcome, come back here whenever.
+
